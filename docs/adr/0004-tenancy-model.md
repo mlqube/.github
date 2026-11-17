@@ -30,8 +30,9 @@ Examples: `retail-1042`, `risk-analytics-2001`
 
 | Rule | Why |
 |---|---|
-| Lowercase letters, digits and hyphens only; must start with a letter | Valid as a Kubernetes name (DNS-1123), S3 name and IAM name |
-| The ID is the segment after the **last** hyphen and contains no hyphens | The BU name may contain hyphens and can still be parsed without ambiguity |
+| `<businessunit_name>`: lowercase letters, digits and hyphens; must start with a letter | Valid as a Kubernetes name (DNS-1123), S3 name and IAM name |
+| `<businessunitid>`: **numeric only** (digits), and always the segment after the **last** hyphen | The BU name may contain hyphens and the ID can still be parsed without ambiguity |
+| Validation pattern: `^[a-z][a-z0-9-]*-[0-9]+$` | Enforced by the `Tenant` API and Kyverno |
 | **30 characters or fewer** | Leaves room for prefixes and suffixes within the 63-character limits of Kubernetes names and S3 buckets and the 64-character limit of IAM role names |
 | **Immutable once created** | Renaming a BU must not break namespaces, buckets, IAM roles or MLflow names. The display name is stored separately as an annotation |
 

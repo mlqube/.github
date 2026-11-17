@@ -164,7 +164,7 @@ Users normally create these through Backstage. Advanced users can apply them dir
 
 MlQube serves one organization, and **each business unit (BU) is a tenant**. All tenants share the same clusters in a single tier.
 
-- **Tenant ID:** `<businessunit_name>-<businessunitid>`, e.g. `retail-1042`. Lowercase, at most 30 characters, and immutable once created.
+- **Tenant ID:** `<businessunit_name>-<businessunitid>`, e.g. `retail-1042`. The BU ID is numeric. Lowercase, at most 30 characters, and immutable once created.
 - **Used everywhere:** Capsule tenant, namespaces (`retail-1042-churn`), the `mlqube/tenant` label, Kueue queue, IdP groups, IAM role, S3 bucket, MLflow names and prefixes, and cost reports.
 - **Isolation:** Capsule namespaces, quotas, Kueue fair-share, default-deny network policies, Kyverno, IAM per tenant, gVisor for CPU workloads and tenant-dedicated GPU nodes.
 - **Cost:** showback/chargeback per BU, based on the tenant label.
