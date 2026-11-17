@@ -5,7 +5,7 @@
 
 ## Context
 
-In the shared tier ([ADR-0004](0004-tenancy-model.md)), tenants run arbitrary code (notebooks, workflow steps, training) on shared nodes. A container escape could expose another tenant's data. Considerations specific to EKS:
+Business units share the workload clusters ([ADR-0004](0004-tenancy-model.md)) and run arbitrary code (notebooks, workflow steps, training) on shared nodes. Even within one organization, a container escape could expose another business unit's confidential data. Considerations specific to EKS:
 
 - EKS has no built-in managed sandbox (unlike GKE Sandbox).
 - **gVisor** can be added with a custom node configuration and a RuntimeClass, but its GPU support covers only a subset of drivers and frameworks.
@@ -20,12 +20,11 @@ In the shared tier ([ADR-0004](0004-tenancy-model.md)), tenants run arbitrary co
 
 ## Decision
 
-For the **shared tier**:
+For **all tenants**:
 
 - **CPU workloads** (notebooks, CPU workflow steps) run with a **gVisor RuntimeClass** on a dedicated Karpenter NodePool configured for gVisor.
 - **GPU workloads** run on **tenant-dedicated GPU nodes**. Karpenter launches GPU nodes tainted and labelled per tenant, so no two tenants share a GPU node. Kueue models these with a resource flavor per tenant.
 - **Baseline for everything:** Pod Security Standards `restricted`, Kyverno policies, default-deny network policies, no access to the instance metadata service from pods (IMDSv2 hop limit), and IAM only through Pod Identity.
-- Premium and enterprise tiers rely on vCluster with dedicated NodePools, or a dedicated cluster.
 
 ## Consequences
 

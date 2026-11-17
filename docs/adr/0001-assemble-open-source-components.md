@@ -11,7 +11,7 @@ MlQube must provide workspaces, training, a model registry, serving, CI/CD and a
 
 1. **Custom control plane.** Our own CRDs, operators and API for every capability. Full control, but a huge build and maintenance cost, and it reinvents mature tools.
 2. **Assemble OSS with a thin glue layer.** Integrate existing projects and build only tenancy, high-level platform APIs, portal templates and metering. Faster to deliver and familiar to users; the cost is integration work and keeping many components upgraded.
-3. **Adopt a full distribution (e.g. Kubeflow as a whole).** Quick to start, but heavy to run, and its multi-user model is hard to fit into a multi-tenant product.
+3. **Adopt a full distribution (e.g. Kubeflow as a whole).** Quick to start, but heavy to run, and its multi-user model is hard to fit into a multi-tenant platform.
 
 ## Decision
 

@@ -7,14 +7,14 @@ Teams building ML and AI products repeatedly hit the same infrastructure problem
 - **GPU access is slow and unfair.** Requests go through tickets, quotas are managed by hand, and expensive GPUs sit idle or are hoarded.
 - **The path from notebook to production is hand-built.** Every team writes its own training scripts, Dockerfiles, serving code and deployment manifests.
 - **Model lifecycle is opaque.** It's unclear which model version is in production, who promoted it, or what data trained it.
-- **Costs are invisible.** GPU spend can't easily be attributed to teams, projects or customers.
+- **Costs are invisible.** GPU spend can't easily be attributed to business units, teams or projects.
 - **Kubernetes is powerful but hard.** Data scientists shouldn't need to learn CRDs, node pools and ingress controllers to ship a model.
 
 For the full organizational case, including value for each stakeholder and results to measure, see [Why an organization needs an ML/AI developer platform](why-an-ml-idp.md).
 
 ## What MlQube is
 
-MlQube is a **multi-tenant internal developer platform (IDP)** on managed Kubernetes, starting with **Amazon EKS on AWS**. It gives ML practitioners self-service golden paths to **build, train, register and serve models**, and gives platform operators control over isolation, quotas, cost and upgrades.
+MlQube is an **internal developer platform (IDP)** for a single organization, in which each **business unit is a tenant**. It runs on managed Kubernetes, starting with **Amazon EKS on AWS**. It gives ML practitioners self-service golden paths to **build, train, register and serve models**, and gives platform operators control over isolation, quotas, cost and upgrades.
 
 MlQube **assembles proven open-source projects** instead of reinventing them. Its own code is a thin glue layer:
 
@@ -27,8 +27,8 @@ MlQube **assembles proven open-source projects** instead of reinventing them. It
 | Persona | Needs |
 |---|---|
 | **ML engineer / data scientist** | GPU notebooks, training jobs, experiment tracking, one-click model endpoints |
-| **Tenant admin** | Manage members, quotas and spend for their organization |
-| **Platform operator** | Run the fleet safely: provision tenants, upgrade components, enforce policy, export billing data |
+| **Business-unit admin** | Manage members, quotas and spend for their business unit (tenant) |
+| **Platform operator** | Run the fleet safely: provision tenants, upgrade components, enforce policy, report cost per business unit |
 
 ## Goals
 

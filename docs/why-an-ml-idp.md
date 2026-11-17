@@ -70,7 +70,7 @@ Managed services (e.g. cloud ML suites) are a valid choice for some organization
 
 - **Control over cost.** Your own GPU capacity, spot instances, and no extra per-call markup.
 - **Portability.** The same platform across clouds, or the option to move later.
-- **Multi-tenancy.** Serving many internal teams or external customers with strict isolation and chargeback.
+- **Multi-tenancy.** Serving many business units and teams on one platform with isolation and chargeback.
 - **Openness.** Bringing your own frameworks, runtimes and open-weight models without waiting for vendor support.
 - **Integration.** Fitting your existing identity, GitOps, security and observability standards.
 
@@ -97,7 +97,7 @@ An ML platform is worth the investment when several of these are true:
 - Models are moving from pilots into customer-facing products
 - Regulatory, audit or customer requirements call for lineage and isolation
 - Platform engineers spend more time on requests than on improvements
-- You offer ML capabilities to **multiple customers or business units** (multi-tenancy)
+- You offer ML capabilities to **multiple business units or teams** (multi-tenancy)
 
 If only one small team ships an occasional model, a lightweight setup or a managed service may be enough. MlQube is aimed at organizations that have outgrown that stage.
 

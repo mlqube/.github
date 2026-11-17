@@ -9,7 +9,7 @@
 | Approach | Assemble open-source components plus a thin MlQube glue layer | [0001](adr/0001-assemble-open-source-components.md) | Accepted |
 | Cloud | AWS / Amazon EKS first | [0002](adr/0002-aws-eks-as-first-cloud.md) | Accepted |
 | Topology | Management cluster plus workload clusters (non-prod, prod) | [0003](adr/0003-cluster-topology.md) | Accepted |
-| Tenancy | Tiers: Capsule namespaces, then vCluster, then dedicated cluster | [0004](adr/0004-tenancy-model.md) | Proposed |
+| Tenancy | Single tier: each business unit is a tenant (`<businessunit_name>-<businessunitid>`) on the shared clusters | [0004](adr/0004-tenancy-model.md) | Accepted |
 | ML jobs & pipelines | Argo Workflows with the Hera Python SDK | [0005](adr/0005-argo-workflows-with-hera-for-ml-jobs.md) | Accepted |
 | Platform APIs | Crossplane | [0006](adr/0006-platform-apis-with-crossplane.md) | Proposed |
 | Tracking & registry | One shared MLflow (RDS PostgreSQL + S3), isolated by permissions and S3 prefixes | [0007](adr/0007-mlflow-multi-tenancy.md) | Accepted |
@@ -60,7 +60,6 @@ flowchart TB
 - **Management cluster:** runs the platform itself. Tenant workloads never run here.
 - **Non-prod workload cluster:** experimentation, jobs, notebooks, MLflow and staging endpoints.
 - **Prod workload cluster:** production endpoints and production pipelines.
-- **Enterprise tenants** get their own workload cluster, added as another spoke.
 - **Local development:** a single kind cluster plays all roles.
 
 ## Layered view
@@ -108,7 +107,7 @@ flowchart TB
 |---|---|---|
 | **Infrastructure** | Terraform, Amazon EKS, VPC per environment, Karpenter NodePools (CPU, GPU, spot-GPU, inference, gVisor), NVIDIA GPU Operator, S3, ECR, RDS | Reproducible clusters and elastic GPU capacity |
 | **Platform core** | Argo CD (hub in mgmt cluster), Crossplane (AWS + Kubernetes providers), AWS Load Balancer Controller / Gateway API, cert-manager, External Secrets (Secrets Manager), Kyverno | Declarative delivery, cloud resources, ingress, secrets, policy |
-| **Tenancy & identity** | OIDC identity provider (Keycloak or corporate IdP), Capsule / vCluster, NetworkPolicies, Kueue, EKS Pod Identity | Tenant isolation, authentication, RBAC, GPU fair-share, IAM without static keys |
+| **Tenancy & identity** | OIDC identity provider (Keycloak or corporate IdP), Capsule, NetworkPolicies, Kueue, EKS Pod Identity | Tenant isolation, authentication, RBAC, GPU fair-share, IAM without static keys |
 | **Workspaces** | Kubeflow Notebooks or Coder, curated CUDA/framework images | Self-service development environments |
 | **Jobs & pipelines** | **Argo Workflows + Hera**, golden-path ClusterWorkflowTemplates, CronWorkflows, Kubeflow Trainer / KubeRay for distributed training | Run Python ML code as jobs and pipelines |
 | **Tracking & registry** | One shared MLflow: RDS PostgreSQL backend store, S3 artifact store with a prefix per tenant, OIDC SSO, per-tenant permissions | Experiments, model versions, stage promotion |
@@ -154,7 +153,7 @@ MlQube adds a small set of high-level resources, implemented with Crossplane ([A
 
 | Resource | Expands into |
 |---|---|
-| `Tenant` | Capsule tenant or vCluster, quotas, Kueue queue, network policies, S3 bucket, IAM role, MLflow permissions and S3 artifact prefix |
+| `Tenant` | Capsule tenant, quotas, Kueue queue, network policies, S3 bucket, IAM role, MLflow permissions and S3 artifact prefix |
 | `MLProject` | Project namespace, ECR repository, CI configuration, MLflow experiment, starter WorkflowTemplates |
 | `Workspace` | Notebook/IDE instance with GPU limits and storage |
 | `ModelDeployment` | KServe InferenceService, route, autoscaling, canary policy, dashboards |
@@ -163,11 +162,12 @@ Users normally create these through Backstage. Advanced users can apply them dir
 
 ## Multi-tenancy model
 
-| Tier | Isolation | Use case |
-|---|---|---|
-| **Standard** | Capsule tenant on shared workload clusters; quotas, Kueue, default-deny network policies, gVisor for CPU, tenant-dedicated GPU nodes | Cost-efficient default |
-| **Premium** | vCluster per tenant, optionally with dedicated Karpenter NodePools | Teams that need their own control plane |
-| **Enterprise** | Dedicated workload cluster | Strict compliance or data residency |
+MlQube serves one organization, and **each business unit (BU) is a tenant**. All tenants share the same clusters in a single tier.
+
+- **Tenant ID:** `<businessunit_name>-<businessunitid>`, e.g. `retail-1042`. Lowercase, at most 30 characters, and immutable once created.
+- **Used everywhere:** Capsule tenant, namespaces (`retail-1042-churn`), the `mlqube/tenant` label, Kueue queue, IdP groups, IAM role, S3 bucket, MLflow names and prefixes, and cost reports.
+- **Isolation:** Capsule namespaces, quotas, Kueue fair-share, default-deny network policies, Kyverno, IAM per tenant, gVisor for CPU workloads and tenant-dedicated GPU nodes.
+- **Cost:** showback/chargeback per BU, based on the tenant label.
 
 See [ADR-0004](adr/0004-tenancy-model.md) and [ADR-0008](adr/0008-workload-sandboxing.md).
 
@@ -193,7 +193,7 @@ sequenceDiagram
 
 ## Open questions
 
-1. Identity provider: self-hosted Keycloak, Amazon Cognito, or the customer's own IdP through federation
+1. Identity provider: self-hosted Keycloak, Amazon Cognito, or the organization's corporate IdP (e.g. Entra ID, Okta) through federation
 2. Ingress: AWS Load Balancer Controller only, or Gateway API with Envoy Gateway / Istio
 3. Observability: self-hosted, or Amazon Managed Prometheus/Grafana
 4. Kueue with Argo Workflow pods: to be checked in a Phase 1 spike

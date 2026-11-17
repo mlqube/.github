@@ -7,7 +7,7 @@
 
 MlQube runs on managed Kubernetes in a public cloud. Supporting EKS, GKE and AKS from day one would roughly triple the infrastructure, testing and operations work before we deliver any user value. We need one primary cloud to start with, and we should structure the code so others can be added later.
 
-The team's main expertise is AWS, and many target customers already run their workloads there.
+The team's main expertise is AWS.
 
 ## Options considered
 

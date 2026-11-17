@@ -15,7 +15,7 @@ ML teams lose a lot of time on infrastructure: GPU quotas, CUDA images, distribu
 ### Why does an organization need this?
 
 - ⏱️ **Models get stuck before production.** Without standard paths, every deployment is a custom project, and AI initiatives stall after the pilot.
-- 💸 **GPUs are expensive and poorly used.** Some sit idle while other teams wait; costs can't be attributed to teams or customers.
+- 💸 **GPUs are expensive and poorly used.** Some sit idle while other teams wait; costs can't be attributed to teams or business units.
 - 🔁 **Every team rebuilds the same stack.** Duplicated training, serving and CI tooling leads to inconsistent quality and wasted effort.
 - 🛡️ **Governance gaps.** No clear lineage from data to deployed model; shadow infrastructure creates security and compliance risk.
 - 🎫 **Platform teams become bottlenecks.** Engineers spend their time on tickets instead of improving the platform.
@@ -29,7 +29,7 @@ MlQube aims to provide:
 - 🏋️ **Training at scale.** GPU jobs that queue fairly and scale to zero when idle.
 - 📦 **Model registry and promotion.** Versioned models that move Dev → Staging → Prod through reviewed, auditable changes.
 - 🚀 **Model serving.** Autoscaled endpoints for classic ML and LLMs, with canary rollouts.
-- 🏢 **Multi-tenancy from day one.** Isolation, quotas and per-tenant cost visibility.
+- 🏢 **Business units as tenants.** Each business unit gets isolation, quotas and its own cost visibility.
 - 🧭 **One front door.** A developer portal with templates, a model catalog and usage dashboards.
 
 ## The golden path

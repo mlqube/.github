@@ -45,4 +45,4 @@ Isolation is enforced at three levels:
 - Isolation of metadata depends on correctly configured MLflow permissions. The glue layer must grant them automatically and test them, and naming rules must be enforced.
 - MLflow's built-in auth is basic. We need an OIDC-capable auth plugin or proxy and must check that it supports group-based permissions.
 - **To check:** if the MLflow version we adopt offers built-in workspace/namespace isolation, we should use it instead of relying on naming conventions.
-- If a tenant later needs strong isolation (enterprise tier), a dedicated MLflow can still be deployed for that tenant as an exception.
+- If a business unit later needs strong isolation for regulatory reasons, a dedicated MLflow can still be deployed for it as an exception.

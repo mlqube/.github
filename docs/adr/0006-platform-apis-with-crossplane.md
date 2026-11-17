@@ -20,7 +20,7 @@ Use **Crossplane** in the management cluster, with the AWS provider and the Kube
 
 | Resource | Creates |
 |---|---|
-| `Tenant` | Capsule tenant or vCluster, quotas, Kueue queue, network policies, S3 bucket, IAM role (Pod Identity), MLflow permissions and S3 artifact prefix |
+| `Tenant` | Capsule tenant (ID `<businessunit_name>-<businessunitid>`), quotas, Kueue queue, network policies, S3 bucket, IAM role (Pod Identity), MLflow permissions and S3 artifact prefix |
 | `MLProject` | Project namespace, ECR repository, CI configuration, MLflow experiment, starter WorkflowTemplates |
 | `Workspace` | Notebook/IDE instance with storage and GPU limits |
 | `ModelDeployment` | KServe InferenceService, route, autoscaling, canary policy, dashboards |
