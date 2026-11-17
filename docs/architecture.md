@@ -1,6 +1,6 @@
 # Architecture
 
-> Draft. Decisions are recorded in [ADRs](adr/); open items are listed at the end of this page.
+> Decisions are recorded in [ADRs](adr/); open items are listed at the end of this page.
 
 ## Key decisions
 
@@ -11,9 +11,9 @@
 | Topology | Management cluster plus workload clusters (non-prod, prod) | [0003](adr/0003-cluster-topology.md) | Accepted |
 | Tenancy | Single tier: each business unit is a tenant (`<businessunit_name>-<businessunitid>`) on the shared clusters | [0004](adr/0004-tenancy-model.md) | Accepted |
 | ML jobs & pipelines | Argo Workflows with the Hera Python SDK | [0005](adr/0005-argo-workflows-with-hera-for-ml-jobs.md) | Accepted |
-| Platform APIs | Crossplane | [0006](adr/0006-platform-apis-with-crossplane.md) | Proposed |
+| Platform APIs | Crossplane | [0006](adr/0006-platform-apis-with-crossplane.md) | Accepted |
 | Tracking & registry | One shared MLflow (RDS PostgreSQL + S3), isolated by permissions and S3 prefixes | [0007](adr/0007-mlflow-multi-tenancy.md) | Accepted |
-| Untrusted code | gVisor for CPU workloads, tenant-dedicated GPU nodes | [0008](adr/0008-workload-sandboxing.md) | Proposed |
+| Untrusted code | gVisor for CPU workloads, tenant-dedicated GPU nodes | [0008](adr/0008-workload-sandboxing.md) | Accepted |
 
 ## Cluster topology on AWS
 

@@ -1,6 +1,6 @@
 # ADR-0008: Sandboxing and node isolation for untrusted tenant code
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-17
 
 ## Context

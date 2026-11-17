@@ -1,6 +1,6 @@
 # ADR-0006: Build the platform APIs with Crossplane
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-17
 
 ## Context
