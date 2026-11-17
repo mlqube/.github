@@ -10,6 +10,8 @@ Teams building ML and AI products repeatedly hit the same infrastructure problem
 - **Costs are invisible.** GPU spend can't easily be attributed to teams, projects or customers.
 - **Kubernetes is powerful but hard.** Data scientists shouldn't need to learn CRDs, node pools and ingress controllers to ship a model.
 
+For the full organizational case, including value for each stakeholder and results to measure, see [Why an organization needs an ML/AI developer platform](why-an-ml-idp.md).
+
 ## What MlQube is
 
 MlQube is a **multi-tenant internal developer platform (IDP)** on managed Kubernetes (EKS, GKE, AKS). It gives ML practitioners self-service golden paths to **build, train, register and serve models**, and gives platform operators control over isolation, quotas, cost and upgrades.

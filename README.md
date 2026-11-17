@@ -7,6 +7,7 @@ This is the special `.github` repository for the **MlQube** organization.
 
 | Document | Purpose |
 |---|---|
+| [Why an ML platform?](docs/why-an-ml-idp.md) | The business case: problems without one, value for each stakeholder, results to measure |
 | [Vision](docs/vision.md) | The problem, who it's for, goals and non-goals |
 | [Architecture](docs/architecture.md) | Platform layers, components and tenancy model |
 | [Roadmap](docs/roadmap.md) | Phased delivery plan and exit criteria |

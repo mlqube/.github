@@ -12,6 +12,16 @@ MlQube lets ML engineers and data scientists **build, train, register and serve 
 
 ML teams lose a lot of time on infrastructure: GPU quotas, CUDA images, distributed training setup, serving stacks, model promotion and cost tracking. Platform teams end up rebuilding the same tooling again and again.
 
+### Why does an organization need this?
+
+- ⏱️ **Models get stuck before production.** Without standard paths, every deployment is a custom project, and AI initiatives stall after the pilot.
+- 💸 **GPUs are expensive and poorly used.** Some sit idle while other teams wait; costs can't be attributed to teams or customers.
+- 🔁 **Every team rebuilds the same stack.** Duplicated training, serving and CI tooling leads to inconsistent quality and wasted effort.
+- 🛡️ **Governance gaps.** No clear lineage from data to deployed model; shadow infrastructure creates security and compliance risk.
+- 🎫 **Platform teams become bottlenecks.** Engineers spend their time on tickets instead of improving the platform.
+
+An ML platform turns infrastructure into **self-service golden paths**. ML teams ship faster, platform teams keep control, and finance can see where the money goes. 👉 [Read the full case](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md)
+
 MlQube aims to provide:
 
 - 🧑‍💻 **Self-service workspaces.** GPU notebooks and IDEs with sensible images and quotas.
@@ -48,6 +58,7 @@ flowchart LR
 
 ## Learn more
 
+- 💡 [Why an organization needs an ML platform](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md)
 - 📖 [Vision](https://github.com/mlqube/.github/blob/main/docs/vision.md)
 - 🏗️ [Architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md)
 - 🗺️ [Roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md)
