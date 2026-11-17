@@ -44,11 +44,35 @@ flowchart LR
     F --> G[Observe latency,<br/>GPU use & cost]
 ```
 
+## Architecture at a glance
+
+[![MlQube: high-level architecture](https://raw.githubusercontent.com/mlqube/.github/main/docs/diagrams/mlqube_1_overview.png)](https://github.com/mlqube/.github/blob/main/docs/architecture.md#enterprise-view)
+
+📐 **Main architecture diagram:** [full enterprise view](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_5_enterprise.png) · [SVG](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_5_enterprise.svg). The [architecture document](https://github.com/mlqube/.github/blob/main/docs/architecture.md#enterprise-view) walks through all five views step by step.
+
+What is planned:
+
+- ☁️ **AWS and Amazon EKS**, built with Terraform: one VPC per environment, private subnets only.
+- 🕸️ **Hub-and-spoke clusters.** A **management cluster** runs the platform itself: Argo CD (GitOps hub), Crossplane (platform APIs), Backstage (portal), one shared MLflow and central observability. A **non-prod cluster** runs notebooks, training jobs and staging endpoints. A **prod cluster** serves models with KServe (vLLM for LLMs) and runs scheduled retraining.
+- ⚡ **Elastic compute** with Karpenter: CPU, gVisor-sandboxed CPU, GPU dedicated per tenant (spot for training) and GPU inference.
+- 🏢 **One tenant per business unit**, e.g. `retail-1042`, isolated with Capsule, quotas, default-deny network policies, Kyverno and a per-tenant IAM role.
+- 🔐 **Single sign-on** with the corporate IdP (OIDC) and groups per tenant (`mlqube-<tenant>-admins`, `-developers`, `-viewers`); workloads never use static cloud keys.
+- 🔄 **Model lifecycle:** train on a tenant GPU node → register in MLflow → test on a staging endpoint → promote through a GitOps PR → KServe canary in prod.
+- 💰 **Governance and FinOps:** policies in every cluster, audit and lineage, and cost showback / chargeback per business unit with OpenCost.
+
+| View | Shows |
+|---|---|
+| [1. High-level architecture](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_1_overview.png) | The building blocks and how they relate |
+| [2. Identity](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_2_identity.png) | How people are authenticated and authorized, and how workloads get cloud access |
+| [3. Management cluster and shared services](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_3_management.png) | What runs in the management cluster and how it uses shared AWS services |
+| [4. Training, testing and serving](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_4_ml_lifecycle.png) | One model's path from Python code to a canary in prod |
+| [5. Full view](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_5_enterprise.png) | All parts joined together |
+
 ## Built on open source
 
 | Area | Projects |
 |---|---|
-| Cloud | AWS: Amazon EKS, S3, ECR (first) |
+| Cloud & infrastructure | AWS: Amazon EKS, S3, ECR, RDS (first) · Terraform |
 | Portal | Backstage |
 | GitOps & platform APIs | Argo CD, Crossplane |
 | Scheduling & quotas | Kueue, GPU Operator, Karpenter |
@@ -56,7 +80,7 @@ flowchart LR
 | Distributed training | Kubeflow Trainer, KubeRay |
 | Tracking & registry | MLflow |
 | Serving | KServe, vLLM, KEDA |
-| Security & policy | Keycloak, Kyverno, Cilium |
+| Identity, tenancy & policy | Corporate IdP (OIDC), Capsule, Kyverno, External Secrets, gVisor |
 | Observability & cost | Prometheus, Grafana, OpenTelemetry, OpenCost |
 
 ## Learn more
