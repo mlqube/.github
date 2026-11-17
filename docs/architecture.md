@@ -15,6 +15,72 @@
 | Tracking & registry | One shared MLflow (RDS PostgreSQL + S3), isolated by permissions and S3 prefixes | [0007](adr/0007-mlflow-multi-tenancy.md) | Accepted |
 | Untrusted code | gVisor for CPU workloads, tenant-dedicated GPU nodes | [0008](adr/0008-workload-sandboxing.md) | Accepted |
 
+## Enterprise view
+
+The architecture is shown in five views, from the big picture down to the details. Every view reads left to right and uses the same swimlane colours. Click an image for the scalable SVG. The sources are in [`diagrams/`](diagrams/) (Python `diagrams` library + Graphviz); `python docs/diagrams/render_all.py` re-renders all of them.
+
+### 1. High-level architecture
+
+[![MlQube: high-level architecture](diagrams/mlqube_1_overview.png)](diagrams/mlqube_1_overview.svg)
+
+Business units (tenants) sign in through the corporate IdP and push Python (Hera) code to GitHub. The **management cluster** is the platform's control plane: it deploys and provisions everything through GitOps. ML work happens in the **non-prod workload cluster**; promoted models are served from the **prod workload cluster** to business applications. All clusters use the shared AWS services, and the platform reports policy, audit and cost per business unit.
+
+### 2. Identity, authentication and authorization
+
+[![MlQube: identity, authentication and authorization](diagrams/mlqube_2_identity.png)](diagrams/mlqube_2_identity.svg)
+
+1. Users reach the portals over the corporate network / VPN, through a private ALB with TLS certificates from ACM.
+2. Each tool (Backstage, MLflow, Grafana, Argo CD, Argo Workflows) signs the user in with the corporate IdP (OIDC + MFA). The ID token carries the user's groups: `mlqube-<tenant>-admins`, `-developers`, `-viewers`.
+3. Each tool maps those groups to roles in the user's own tenant only: Backstage ownership, MLflow permissions on the tenant's experiments and models, Grafana teams, Argo Workflows SSO RBAC.
+4. `kubectl` uses the same OIDC token against the EKS API; Kubernetes RBAC and Capsule limit users to their tenant's namespaces.
+5. Kyverno and Capsule check every object at admission (tenant labels, quotas, allowed images).
+6. Workloads never hold static cloud keys: a tenant pod's ServiceAccount gets temporary credentials for the tenant's IAM role through EKS Pod Identity, which can reach only that tenant's S3 bucket, ECR repositories and secrets.
+
+### 3. Management cluster and shared services
+
+[![MlQube: management cluster and shared services](diagrams/mlqube_3_management.png)](diagrams/mlqube_3_management.svg)
+
+The management cluster runs the platform itself; tenant workloads never run there. It contains: **Argo CD** (GitOps hub), **Backstage** (portal: templates, catalog, cost views), **Crossplane** with the MlQube APIs (`Tenant`, `MLProject`, `Workspace`, `ModelDeployment`), the one shared **MLflow**, **central observability** (OpenTelemetry Collector, Prometheus, Loki, Grafana, OpenCost) and the add-ons every cluster has (External Secrets Operator, AWS Load Balancer Controller, Kyverno).
+
+1. Terraform builds the foundation (VPCs, the three EKS clusters, RDS, base IAM) and bootstraps Argo CD.
+2. Argo CD syncs platform add-ons and configuration from Git to the management and workload clusters.
+3. A new tenant or project is requested in Backstage; the template opens a PR with a `Tenant` / `MLProject` claim, which Argo CD applies.
+4. Crossplane turns the claim into AWS and Kubernetes resources: S3 bucket, IAM role, ECR repository, namespaces, quotas and Kueue queues.
+5. MLflow keeps metadata in RDS PostgreSQL (Multi-AZ) and artifacts in S3 under a prefix per tenant.
+6. External Secrets copies secrets (e.g. the RDS password) from Secrets Manager into the clusters.
+7. All clusters send metrics, logs and traces to central observability; OpenCost reports cost per business unit.
+
+### 4. Training, testing and serving
+
+[![MlQube: training, testing and serving](diagrams/mlqube_4_ml_lifecycle.png)](diagrams/mlqube_4_ml_lifecycle.svg)
+
+1. **Develop:** explore data in a notebook and write the pipeline in Python with the Hera SDK.
+2. **Build:** push to GitHub; GitHub Actions runs tests and pushes training and serving images to ECR.
+3. **Submit:** the Hera code submits a workflow (golden template `train-evaluate-register`) to Argo Workflows in the tenant's namespace.
+4. **Schedule:** Kueue admits it to the tenant's GPU queue; Karpenter starts a tenant-dedicated spot GPU node.
+5. **Train and track:** the job reads data from the tenant's S3 bucket, logs runs and registers the model version in MLflow.
+6. **Test:** an evaluate step compares the model against the baseline, then the candidate is deployed to a staging endpoint (KServe) for integration and load tests.
+7. **Promote:** the model owner promotes the version in MLflow; MlQube opens a GitOps PR with a `ModelDeployment`.
+8. **Deploy:** after approval and merge, Argo CD rolls out a KServe canary in prod (vLLM for LLMs) on GPU inference nodes.
+9. **Serve:** business applications call the endpoint through the internal ALB.
+10. **Retrain:** CronWorkflows retrain on a schedule and register a new version, which goes back to step 6.
+
+### 5. Full view
+
+[![MlQube: Enterprise ML Platform on AWS, full view](diagrams/mlqube_5_enterprise.png)](diagrams/mlqube_5_enterprise.svg)
+
+All parts joined together: **people and business units** (tenants such as `retail-1042`, `risk-analytics-2001` and `marketing-3007`, plus the platform team and Finance/FinOps), the **corporate edge and identity** (corporate IdP, VPN, GitHub org, Terraform), the **AWS account** (management cluster, non-prod and prod workload clusters, shared AWS services), and **governance and FinOps**.
+
+Numbered flows:
+
+1. **Job submission:** an ML engineer writes Python with the Hera SDK and submits it to Argo Workflows; Kueue admits it to the tenant's GPU queue and Karpenter launches a tenant-dedicated GPU node (spot for training).
+2. **Tracking and registry:** the job logs runs and registers the model in the shared MLflow; metadata goes to RDS PostgreSQL (Multi-AZ), artifacts to the tenant's S3 prefix (`s3://<bucket>/tenants/<tenant>/`).
+3. **Model promotion:** promoting a model in MLflow opens a GitOps PR in GitHub; on merge, Argo CD deploys a KServe canary (vLLM for LLMs) in the prod cluster.
+4. **GitOps:** Argo CD in the management cluster syncs both workload clusters.
+5. **Provisioning:** Crossplane creates each tenant's S3 bucket, IAM role (EKS Pod Identity) and namespaces.
+6. **SSO:** the corporate IdP (OIDC) signs users in to Backstage, the Argo Workflows UI and MLflow, using the groups `mlqube-<tenant>-admins`, `-developers` and `-viewers`.
+7. **Metrics and cost:** all clusters send metrics and logs to central observability (OpenTelemetry, Prometheus, Loki, Grafana); OpenCost turns them into a showback/chargeback report per BU.
+
 ## Cluster topology on AWS
 
 ```mermaid
