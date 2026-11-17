@@ -32,7 +32,7 @@ Use **AWS with Amazon EKS** as the first and primary cloud. The main AWS buildin
 | Ingress, DNS, certificates | AWS Load Balancer Controller, Route 53, ACM / cert-manager |
 | Networking | One VPC per environment, private subnets for nodes |
 
-Infrastructure is written in OpenTofu/Terraform. AWS-specific modules are kept separate so another cloud can be added later without rewriting the platform layer.
+Infrastructure is written in Terraform. AWS-specific modules are kept separate so another cloud can be added later without rewriting the platform layer.
 
 ## Consequences
 

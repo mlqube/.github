@@ -105,7 +105,7 @@ flowchart TB
 
 | Layer | Components | Responsibility |
 |---|---|---|
-| **Infrastructure** | OpenTofu/Terraform, Amazon EKS, VPC per environment, Karpenter NodePools (CPU, GPU, spot-GPU, inference, gVisor), NVIDIA GPU Operator, S3, ECR, RDS | Reproducible clusters and elastic GPU capacity |
+| **Infrastructure** | Terraform, Amazon EKS, VPC per environment, Karpenter NodePools (CPU, GPU, spot-GPU, inference, gVisor), NVIDIA GPU Operator, S3, ECR, RDS | Reproducible clusters and elastic GPU capacity |
 | **Platform core** | Argo CD (hub in mgmt cluster), Crossplane (AWS + Kubernetes providers), AWS Load Balancer Controller / Gateway API, cert-manager, External Secrets (Secrets Manager), Kyverno | Declarative delivery, cloud resources, ingress, secrets, policy |
 | **Tenancy & identity** | OIDC identity provider (Keycloak or corporate IdP), Capsule / vCluster, NetworkPolicies, Kueue, EKS Pod Identity | Tenant isolation, authentication, RBAC, GPU fair-share, IAM without static keys |
 | **Workspaces** | Kubeflow Notebooks or Coder, curated CUDA/framework images | Self-service development environments |

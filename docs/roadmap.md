@@ -5,7 +5,7 @@
 | Phase | Goal | Exit criteria |
 |---|---|---|
 | **0. Decisions** | Settle the key architecture questions as [ADRs](adr/) | ADRs 0001–0008 accepted |
-| **1. Foundation (AWS)** | OpenTofu for the VPC and the `mgmt` and `wl-nonprod` EKS clusters; Karpenter with CPU and GPU NodePools; Argo CD hub; identity; observability; local kind setup | `git push` reconciles both clusters; a GPU pod runs on a Karpenter-provisioned node and shows up in dashboards |
+| **1. Foundation (AWS)** | Terraform for the VPC and the `mgmt` and `wl-nonprod` EKS clusters; Karpenter with CPU and GPU NodePools; Argo CD hub; identity; observability; local kind setup | `git push` reconciles both clusters; a GPU pod runs on a Karpenter-provisioned node and shows up in dashboards |
 | **1a. Spike** | Argo Workflows + Kueue + Karpenter GPU queueing | Workflow GPU steps queue per tenant and run on scaled-up GPU nodes |
 | **2. Tenancy** | `Tenant` API (Crossplane), Capsule, quotas, Kueue queues, policies, S3 bucket and IAM role per tenant | Two tenants can't see each other's workflows, data or network traffic; GPU quotas are enforced |
 | **3. ML jobs** | Argo Workflows with SSO, Hera SDK, curated GPU images, golden-path templates, CronWorkflows | An ML engineer submits a Python training job with Hera, and it runs on GPU with artifacts in S3 |
@@ -28,6 +28,6 @@
 | GPU cost and availability on AWS | Several instance families, spot for training, scale-to-zero, quotas from day one, capacity reservations where needed |
 | Kueue integration with Argo Workflow pods | Phase 1a spike before building on it; fall back to Argo's own parallelism limits plus ResourceQuotas |
 | Gaps in tenant isolation | Threat model in Phase 2; policy as code; gVisor for CPU and tenant-dedicated GPU nodes |
-| Running several EKS clusters | Everything in OpenTofu and GitOps; upgrade non-prod first |
+| Running several EKS clusters | Everything in Terraform and GitOps; upgrade non-prod first |
 | Upgrade burden across many OSS components | Pinned versions, GitOps, staging first, a regular upgrade schedule |
 | Slow cold starts for large models | Model caching, warm replicas, local model stores |
