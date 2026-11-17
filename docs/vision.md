@@ -10,11 +10,11 @@ Teams building ML and AI products repeatedly hit the same infrastructure problem
 - **Costs are invisible.** GPU spend can't easily be attributed to teams, projects or customers.
 - **Kubernetes is powerful but hard.** Data scientists shouldn't need to learn CRDs, node pools and ingress controllers to ship a model.
 
-## What mlqube is
+## What MlQube is
 
-mlqube is a **multi-tenant internal developer platform (IDP)** on managed Kubernetes (EKS, GKE, AKS). It gives ML practitioners self-service golden paths to **build, train, register and serve models**, and gives platform operators control over isolation, quotas, cost and upgrades.
+MlQube is a **multi-tenant internal developer platform (IDP)** on managed Kubernetes (EKS, GKE, AKS). It gives ML practitioners self-service golden paths to **build, train, register and serve models**, and gives platform operators control over isolation, quotas, cost and upgrades.
 
-mlqube **assembles proven open-source projects** instead of reinventing them. Its own code is a thin glue layer:
+MlQube **assembles proven open-source projects** instead of reinventing them. Its own code is a thin glue layer:
 
 - Higher-level platform resources (`Tenant`, `MLProject`, `Workspace`, `ModelDeployment`)
 - Developer portal templates and plugins
@@ -42,7 +42,7 @@ mlqube **assembles proven open-source projects** instead of reinventing them. It
 - Building our own training framework, serving runtime or experiment tracker
 - Supporting on-prem or bare-metal clusters in the first release
 - Feature stores, data labeling and model evaluation suites (possible later additions)
-- Replacing general-purpose application platforms; mlqube focuses on ML workloads
+- Replacing general-purpose application platforms; MlQube focuses on ML workloads
 
 ## Guiding principles
 

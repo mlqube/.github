@@ -1,18 +1,18 @@
-# mlqube
+# MlQube
 
 **A Kubernetes-native internal developer platform for ML and AI teams.**
 
-mlqube lets ML engineers and data scientists **build, train, register and serve models** themselves, with no need to become Kubernetes experts. It is built from proven open-source projects and adds a thin layer for multi-tenancy, golden paths and cost visibility.
+MlQube lets ML engineers and data scientists **build, train, register and serve models** themselves, with no need to become Kubernetes experts. It is built from proven open-source projects and adds a thin layer for multi-tenancy, golden paths and cost visibility.
 
 > **Status:** 🧭 Planning. We are designing the architecture in the open. Nothing here is ready for production yet.
 
 ---
 
-## Why mlqube?
+## Why MlQube?
 
 ML teams lose a lot of time on infrastructure: GPU quotas, CUDA images, distributed training setup, serving stacks, model promotion and cost tracking. Platform teams end up rebuilding the same tooling again and again.
 
-mlqube aims to provide:
+MlQube aims to provide:
 
 - 🧑‍💻 **Self-service workspaces.** GPU notebooks and IDEs with sensible images and quotas.
 - 🏋️ **Training at scale.** Distributed jobs and pipelines that queue fairly for GPUs and scale to zero when idle.

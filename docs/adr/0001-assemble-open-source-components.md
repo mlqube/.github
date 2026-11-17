@@ -5,7 +5,7 @@
 
 ## Context
 
-mlqube must provide workspaces, training, a model registry, serving, CI/CD and a developer portal, all multi-tenant, on managed Kubernetes. Mature open-source projects already exist for each capability (Kubeflow components, KServe, MLflow, Argo, Backstage, Kueue, Crossplane). Building our own equivalents would take years and duplicate community work.
+MlQube must provide workspaces, training, a model registry, serving, CI/CD and a developer portal, all multi-tenant, on managed Kubernetes. Mature open-source projects already exist for each capability (Kubeflow components, KServe, MLflow, Argo, Backstage, Kueue, Crossplane). Building our own equivalents would take years and duplicate community work.
 
 ## Options considered
 
@@ -15,11 +15,11 @@ mlqube must provide workspaces, training, a model registry, serving, CI/CD and a
 
 ## Decision
 
-Option 2: **assemble OSS components with a thin mlqube glue layer.** Components are adopted individually (e.g. KServe, Kubeflow Trainer, Notebooks), not as one monolithic distribution.
+Option 2: **assemble OSS components with a thin MlQube glue layer.** Components are adopted individually (e.g. KServe, Kubeflow Trainer, Notebooks), not as one monolithic distribution.
 
 ## Consequences
 
 - Faster time to value; users work with tools they already know.
-- mlqube's own code stays small: platform APIs, Backstage templates and plugins, policies and metering.
+- MlQube's own code stays small: platform APIs, Backstage templates and plugins, policies and metering.
 - We have to manage version compatibility and upgrades across many projects, so GitOps, pinned versions and a staging cluster are required.
 - Gaps in upstream multi-tenancy (e.g. MLflow authorization) have to be closed in the glue layer.

@@ -1,9 +1,9 @@
 # mlqube/.github
 
-This is the special `.github` repository for the **mlqube** organization.
+This is the special `.github` repository for the **MlQube** organization.
 
 - [`profile/README.md`](profile/README.md) is shown on the organization's GitHub page.
-- [`docs/`](docs/) describes the idea behind mlqube: a Kubernetes-native internal developer platform (IDP) for ML/AI teams.
+- [`docs/`](docs/) describes the idea behind MlQube: a Kubernetes-native internal developer platform (IDP) for ML/AI teams.
 
 | Document | Purpose |
 |---|---|
@@ -14,4 +14,4 @@ This is the special `.github` repository for the **mlqube** organization.
 
 ## Contributing
 
-mlqube is in the planning phase. To propose an idea or challenge a decision, open an issue. To propose an architectural decision, add an ADR using [the template](docs/adr/0000-template.md).
+MlQube is in the planning phase. To propose an idea or challenge a decision, open an issue. To propose an architectural decision, add an ADR using [the template](docs/adr/0000-template.md).

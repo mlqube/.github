@@ -8,7 +8,7 @@
 flowchart TB
     subgraph Portal["Developer experience"]
         BS[Backstage portal<br/>templates · catalog · cost]
-        API[mlqube platform APIs<br/>Tenant · MLProject · Workspace · ModelDeployment]
+        API[MlQube platform APIs<br/>Tenant · MLProject · Workspace · ModelDeployment]
     end
 
     subgraph ML["ML capabilities"]
@@ -56,7 +56,7 @@ flowchart TB
 
 ## Platform APIs (the glue layer)
 
-mlqube adds a small set of high-level resources, implemented as Crossplane Compositions or KRO definitions:
+MlQube adds a small set of high-level resources, implemented as Crossplane Compositions or KRO definitions:
 
 | Resource | Expands into |
 |---|---|
