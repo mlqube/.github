@@ -1,40 +1,102 @@
 # Architecture
 
-> Draft. Components and choices may change as [ADRs](adr/) are accepted.
+> Draft. Decisions are recorded in [ADRs](adr/); open items are listed at the end of this page.
+
+## Key decisions
+
+| Area | Decision | ADR | Status |
+|---|---|---|---|
+| Approach | Assemble open-source components plus a thin MlQube glue layer | [0001](adr/0001-assemble-open-source-components.md) | Accepted |
+| Cloud | AWS / Amazon EKS first | [0002](adr/0002-aws-eks-as-first-cloud.md) | Accepted |
+| Topology | Management cluster plus workload clusters (non-prod, prod) | [0003](adr/0003-cluster-topology.md) | Accepted |
+| Tenancy | Tiers: Capsule namespaces, then vCluster, then dedicated cluster | [0004](adr/0004-tenancy-model.md) | Proposed |
+| ML jobs & pipelines | Argo Workflows with the Hera Python SDK | [0005](adr/0005-argo-workflows-with-hera-for-ml-jobs.md) | Accepted |
+| Platform APIs | Crossplane | [0006](adr/0006-platform-apis-with-crossplane.md) | Proposed |
+| Tracking & registry | One MLflow instance per tenant | [0007](adr/0007-mlflow-multi-tenancy.md) | Proposed |
+| Untrusted code | gVisor for CPU workloads, tenant-dedicated GPU nodes | [0008](adr/0008-workload-sandboxing.md) | Proposed |
+
+## Cluster topology on AWS
+
+```mermaid
+flowchart TB
+    subgraph MGMT["Management cluster (EKS)"]
+        ARGOCD[Argo CD hub]
+        XP[Crossplane + AWS provider]
+        BS[Backstage portal]
+        IDP[Identity provider · OIDC]
+        OBS[Central observability]
+    end
+
+    subgraph NONPROD["Workload cluster: non-prod (EKS)"]
+        NS1[Tenant namespaces]
+        AW[Argo Workflows · Kueue]
+        NB[Notebooks · MLflow per tenant]
+        NP1[Karpenter NodePools<br/>CPU · GPU · spot-GPU · gVisor]
+    end
+
+    subgraph PROD["Workload cluster: prod (EKS)"]
+        NS2[Tenant namespaces]
+        KS[KServe endpoints]
+        CRON[Production pipelines<br/>scheduled retraining]
+        NP2[Karpenter NodePools<br/>CPU · GPU inference]
+    end
+
+    subgraph AWS["Shared AWS services"]
+        S3[S3 · bucket per tenant]
+        ECR[ECR]
+        RDS[RDS PostgreSQL]
+        SM[Secrets Manager]
+        PI[EKS Pod Identity · IAM]
+    end
+
+    ARGOCD -- GitOps --> NONPROD
+    ARGOCD -- GitOps --> PROD
+    XP -- provisions --> AWS
+    NONPROD --- AWS
+    PROD --- AWS
+```
+
+- **Management cluster:** runs the platform itself. Tenant workloads never run here.
+- **Non-prod workload cluster:** experimentation, jobs, notebooks, MLflow and staging endpoints.
+- **Prod workload cluster:** production endpoints and production pipelines.
+- **Enterprise tenants** get their own workload cluster, added as another spoke.
+- **Local development:** a single kind cluster plays all roles.
 
 ## Layered view
 
 ```mermaid
 flowchart TB
     subgraph Portal["Developer experience"]
-        BS[Backstage portal<br/>templates · catalog · cost]
+        UI[Backstage portal<br/>templates · catalog · cost]
+        SDK[Python SDK · Hera]
         API[MlQube platform APIs<br/>Tenant · MLProject · Workspace · ModelDeployment]
     end
 
     subgraph ML["ML capabilities"]
         WS[Workspaces<br/>Notebooks / IDEs]
-        TR[Training<br/>Kubeflow Trainer · KubeRay · Pipelines]
+        JOBS[Jobs & pipelines<br/>Argo Workflows · Kubeflow Trainer · KubeRay]
         REG[Tracking & registry<br/>MLflow]
         SRV[Serving<br/>KServe · vLLM · KEDA]
     end
 
     subgraph Core["Platform core"]
         GITOPS[Argo CD · GitOps]
-        XP[Crossplane]
+        XPC[Crossplane]
         Q[Kueue · GPU quotas]
-        SEC[Keycloak · Kyverno · Cilium]
-        OBS[Prometheus · Grafana · OTel · OpenCost]
-        GW[Gateway API · cert-manager]
+        SEC[IdP · Kyverno · Capsule · NetworkPolicies]
+        OBSC[Prometheus · Grafana · OTel · OpenCost]
+        GW[AWS LB Controller · Gateway API · cert-manager]
     end
 
-    subgraph Infra["Infrastructure"]
-        K8S[Managed Kubernetes<br/>EKS / GKE / AKS]
-        GPU[GPU node pools<br/>Karpenter · GPU Operator]
-        STO[Object storage · OCI registry]
+    subgraph Infra["AWS infrastructure"]
+        EKS[Amazon EKS]
+        KARP[Karpenter · NVIDIA GPU Operator]
+        STO[S3 · ECR · RDS · Secrets Manager]
     end
 
-    BS --> API
-    API --> WS & TR & REG & SRV
+    UI --> API
+    SDK --> JOBS
+    API --> WS & JOBS & REG & SRV
     ML --> Core
     Core --> Infra
 ```
@@ -43,69 +105,95 @@ flowchart TB
 
 | Layer | Components | Responsibility |
 |---|---|---|
-| **Infrastructure** | OpenTofu/Terraform, managed Kubernetes, Karpenter or node auto-provisioning, NVIDIA GPU Operator, object storage, OCI registry | Reproducible clusters and elastic GPU capacity |
-| **Platform core** | Argo CD, Crossplane, Gateway API (Envoy Gateway / Istio), cert-manager, External Secrets, Kyverno | Declarative delivery, cloud resources, ingress, secrets, policy |
-| **Tenancy & identity** | Keycloak or cloud IdP (OIDC), Capsule / vCluster, Cilium network policies, Kueue | Tenant isolation, authentication, RBAC, GPU fair-share |
+| **Infrastructure** | OpenTofu/Terraform, Amazon EKS, VPC per environment, Karpenter NodePools (CPU, GPU, spot-GPU, inference, gVisor), NVIDIA GPU Operator, S3, ECR, RDS | Reproducible clusters and elastic GPU capacity |
+| **Platform core** | Argo CD (hub in mgmt cluster), Crossplane (AWS + Kubernetes providers), AWS Load Balancer Controller / Gateway API, cert-manager, External Secrets (Secrets Manager), Kyverno | Declarative delivery, cloud resources, ingress, secrets, policy |
+| **Tenancy & identity** | OIDC identity provider (Keycloak or corporate IdP), Capsule / vCluster, NetworkPolicies, Kueue, EKS Pod Identity | Tenant isolation, authentication, RBAC, GPU fair-share, IAM without static keys |
 | **Workspaces** | Kubeflow Notebooks or Coder, curated CUDA/framework images | Self-service development environments |
-| **Training** | Kubeflow Trainer, KubeRay, Kubeflow Pipelines or Argo Workflows | Distributed training and ML pipelines |
-| **Tracking & registry** | MLflow, per-tenant artifact buckets | Experiments, model versions, stage promotion |
+| **Jobs & pipelines** | **Argo Workflows + Hera**, golden-path ClusterWorkflowTemplates, CronWorkflows, Kubeflow Trainer / KubeRay for distributed training | Run Python ML code as jobs and pipelines |
+| **Tracking & registry** | MLflow per tenant (RDS PostgreSQL metadata, S3 artifacts) | Experiments, model versions, stage promotion |
 | **Serving** | KServe (vLLM, Triton, sklearn/xgboost runtimes), KEDA / Knative | Autoscaled inference endpoints, canary rollouts |
-| **CI/CD** | GitHub Actions or Tekton, Argo CD, Argo Rollouts | Image builds, model promotion through GitOps |
+| **CI/CD** | GitHub Actions → ECR, Argo CD, Argo Rollouts | Image builds, model promotion through GitOps |
 | **Portal** | Backstage | Templates, model & endpoint catalog, usage and cost views |
-| **Observability & cost** | Prometheus, Grafana, Loki, OpenTelemetry, DCGM exporter, OpenCost | Metrics, logs, traces, GPU telemetry, cost allocation |
+| **Observability & cost** | Prometheus, Grafana, Loki, OpenTelemetry, DCGM exporter, OpenCost (AWS pricing) | Metrics, logs, traces, GPU telemetry, cost allocation |
+
+## How ML engineers run code
+
+ML engineers write **Python** and submit it as an **Argo Workflow** using the Hera SDK ([ADR-0005](adr/0005-argo-workflows-with-hera-for-ml-jobs.md)):
+
+```python
+from hera.workflows import Workflow, script, Resources
+
+@script(image="mlqube/pytorch:cuda", resources=Resources(gpus=1, memory="32Gi"))
+def train(lr: float):
+    ...  # regular PyTorch / scikit-learn code, logging to MLflow
+
+with Workflow(generate_name="train-", entrypoint="train", namespace="team-a") as w:
+    train(arguments={"lr": 0.001})
+w.create()
+```
+
+```mermaid
+flowchart LR
+    PY[Python code<br/>+ Hera] --> AS[Argo Server<br/>SSO · tenant RBAC]
+    AS --> WF[Workflow in<br/>tenant namespace]
+    WF --> KQ[Kueue<br/>tenant GPU queue]
+    KQ --> KP[Karpenter<br/>launches GPU node]
+    KP --> POD[Step pods run]
+    POD --> S3[(Tenant S3<br/>artifacts)]
+    POD --> MLF[(Tenant MLflow<br/>metrics · models)]
+```
+
+- **Golden-path templates:** `train-evaluate-register`, `batch-inference`, `hyperparameter-sweep`.
+- **Distributed training:** a step creates a Kubeflow `TrainJob` or Ray job and waits for it.
+- **Scheduled jobs:** CronWorkflows, e.g. nightly retraining.
 
 ## Platform APIs (the glue layer)
 
-MlQube adds a small set of high-level resources, implemented as Crossplane Compositions or KRO definitions:
+MlQube adds a small set of high-level resources, implemented with Crossplane ([ADR-0006](adr/0006-platform-apis-with-crossplane.md)):
 
 | Resource | Expands into |
 |---|---|
-| `Tenant` | Namespaces, quotas, Kueue queues, network policies, IdP group, artifact bucket, MLflow access |
-| `MLProject` | Git repo from template, CI pipeline, project namespace, MLflow experiment |
+| `Tenant` | Capsule tenant or vCluster, quotas, Kueue queue, network policies, S3 bucket, IAM role, MLflow instance |
+| `MLProject` | Project namespace, ECR repository, CI configuration, MLflow experiment, starter WorkflowTemplates |
 | `Workspace` | Notebook/IDE instance with GPU limits and storage |
 | `ModelDeployment` | KServe InferenceService, route, autoscaling, canary policy, dashboards |
 
 Users normally create these through Backstage. Advanced users can apply them directly through Git.
 
-## Multi-tenancy model (proposed)
+## Multi-tenancy model
 
 | Tier | Isolation | Use case |
 |---|---|---|
-| **Standard** | Shared cluster; namespace per tenant (Capsule), network policies, Kueue quotas, optional sandboxed runtime (gVisor/Kata) | Cost-efficient default |
-| **Premium** | Virtual cluster per tenant (vCluster) on shared nodes or dedicated node pools | Teams that need their own control plane |
-| **Enterprise** | Dedicated cluster per tenant | Strict compliance or data residency |
+| **Standard** | Capsule tenant on shared workload clusters; quotas, Kueue, default-deny network policies, gVisor for CPU, tenant-dedicated GPU nodes | Cost-efficient default |
+| **Premium** | vCluster per tenant, optionally with dedicated Karpenter NodePools | Teams that need their own control plane |
+| **Enterprise** | Dedicated workload cluster | Strict compliance or data residency |
 
-Key isolation concerns: shared GPU nodes, secrets, MLflow authorization, egress control and untrusted code in notebooks and training jobs.
+See [ADR-0004](adr/0004-tenancy-model.md) and [ADR-0008](adr/0008-workload-sandboxing.md).
 
 ## Model lifecycle flow
 
 ```mermaid
 sequenceDiagram
     participant Dev as ML engineer
-    participant NB as Workspace
-    participant TR as Training
-    participant ML as MLflow registry
+    participant AW as Argo Workflows (non-prod)
+    participant ML as MLflow (tenant)
     participant Git as GitOps repo
-    participant CD as Argo CD
-    participant KS as KServe
+    participant CD as Argo CD (mgmt)
+    participant KS as KServe (prod)
 
-    Dev->>NB: Explore & prototype
-    Dev->>TR: Submit training pipeline
-    TR->>ML: Log runs, register model v3
+    Dev->>AW: Submit training workflow (Python / Hera)
+    AW->>ML: Log runs, register model v3
     Dev->>ML: Promote v3 to Staging
     ML->>Git: Open PR (ModelDeployment v3)
     Git->>CD: Merge triggers sync
-    CD->>KS: Deploy canary
-    Dev->>Git: Approve promotion to Prod
+    CD->>KS: Deploy canary in prod cluster
+    Dev->>Git: Approve full rollout
 ```
 
 ## Open questions
 
-These will be settled as ADRs:
-
-1. Which cloud provider comes first?
-2. Final tenancy tiers and default isolation for the shared tier
-3. Kubeflow Pipelines vs Argo Workflows
-4. MLflow multi-tenancy: an instance per tenant or shared behind an authorization proxy
-5. Crossplane Compositions vs KRO for the platform APIs
-6. Whether sandboxed runtimes are required for the shared tier
+1. Identity provider: self-hosted Keycloak, Amazon Cognito, or the customer's own IdP through federation
+2. Ingress: AWS Load Balancer Controller only, or Gateway API with Envoy Gateway / Istio
+3. Observability: self-hosted, or Amazon Managed Prometheus/Grafana
+4. Kueue with Argo Workflow pods: to be checked in a Phase 1 spike
+5. Workspaces: Kubeflow Notebooks or Coder

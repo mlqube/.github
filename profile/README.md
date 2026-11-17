@@ -25,7 +25,8 @@ An ML platform turns infrastructure into **self-service golden paths**. ML teams
 MlQube aims to provide:
 
 - 🧑‍💻 **Self-service workspaces.** GPU notebooks and IDEs with sensible images and quotas.
-- 🏋️ **Training at scale.** Distributed jobs and pipelines that queue fairly for GPUs and scale to zero when idle.
+- 🐍 **Write Python, run it as a job.** ML code runs as Argo Workflows jobs and pipelines through a simple Python SDK, with no YAML.
+- 🏋️ **Training at scale.** GPU jobs that queue fairly and scale to zero when idle.
 - 📦 **Model registry and promotion.** Versioned models that move Dev → Staging → Prod through reviewed, auditable changes.
 - 🚀 **Model serving.** Autoscaled endpoints for classic ML and LLMs, with canary rollouts.
 - 🏢 **Multi-tenancy from day one.** Isolation, quotas and per-tenant cost visibility.
@@ -47,10 +48,12 @@ flowchart LR
 
 | Area | Projects |
 |---|---|
+| Cloud | AWS: Amazon EKS, S3, ECR (first) |
 | Portal | Backstage |
 | GitOps & platform APIs | Argo CD, Crossplane |
 | Scheduling & quotas | Kueue, GPU Operator, Karpenter |
-| Training | Kubeflow Trainer, KubeRay, Pipelines |
+| ML jobs & pipelines | Argo Workflows + Hera (Python SDK) |
+| Distributed training | Kubeflow Trainer, KubeRay |
 | Tracking & registry | MLflow |
 | Serving | KServe, vLLM, KEDA |
 | Security & policy | Keycloak, Kyverno, Cilium |

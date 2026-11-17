@@ -14,7 +14,7 @@ For the full organizational case, including value for each stakeholder and resul
 
 ## What MlQube is
 
-MlQube is a **multi-tenant internal developer platform (IDP)** on managed Kubernetes (EKS, GKE, AKS). It gives ML practitioners self-service golden paths to **build, train, register and serve models**, and gives platform operators control over isolation, quotas, cost and upgrades.
+MlQube is a **multi-tenant internal developer platform (IDP)** on managed Kubernetes, starting with **Amazon EKS on AWS**. It gives ML practitioners self-service golden paths to **build, train, register and serve models**, and gives platform operators control over isolation, quotas, cost and upgrades.
 
 MlQube **assembles proven open-source projects** instead of reinventing them. Its own code is a thin glue layer:
 
@@ -37,7 +37,8 @@ MlQube **assembles proven open-source projects** instead of reinventing them. It
 3. **Auditable model lifecycle.** Every promotion is a versioned, reviewed change (GitOps).
 4. **Strong tenant isolation.** Separate network, identity, data and compute boundaries per tenant.
 5. **Cost transparency.** GPU-hours and serving usage attributed per tenant and project.
-6. **Portable.** One cloud first, with infrastructure modules designed so other clouds can be added.
+6. **Python-first.** ML engineers write Python and run it as jobs and pipelines (Argo Workflows with Hera), with no YAML required.
+7. **Portable.** AWS first, with infrastructure modules designed so other clouds can be added.
 
 ## Non-goals (for now)
 

@@ -11,7 +11,7 @@ This is the special `.github` repository for the **MlQube** organization.
 | [Vision](docs/vision.md) | The problem, who it's for, goals and non-goals |
 | [Architecture](docs/architecture.md) | Platform layers, components and tenancy model |
 | [Roadmap](docs/roadmap.md) | Phased delivery plan and exit criteria |
-| [ADRs](docs/adr/) | Architecture decisions, recorded as they are made |
+| [ADRs](docs/adr/README.md) | Architecture decisions: AWS/EKS, cluster topology, Argo Workflows, tenancy and more |
 
 ## Contributing
 

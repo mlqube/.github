@@ -61,7 +61,7 @@ An IDP turns infrastructure into **self-service products with sensible defaults 
 - **One substrate for everything.** Notebooks, distributed training, pipelines and inference all run on the same scheduler.
 - **Elastic GPU capacity.** Node autoscaling and scale-to-zero make GPU spend follow demand.
 - **A rich ML ecosystem.** KServe, Kubeflow, Ray, Kueue and MLflow are mature and community-backed.
-- **Portable.** Runs on EKS, GKE and AKS, which avoids lock-in to a single vendor's ML service.
+- **Portable.** Starts on Amazon EKS, but because it's built on standard Kubernetes it can later run on GKE or AKS, which avoids lock-in to a single vendor's ML service.
 - **Declarative operations.** GitOps, policy engines and controllers make the platform reproducible and auditable.
 
 ## 5. Why not just use a managed ML service?
