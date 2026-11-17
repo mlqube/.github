@@ -30,7 +30,7 @@ Baseline controls for every tenant in the shared tier:
 - **Network:** default-deny NetworkPolicies, with egress only to allowed destinations.
 - **Policy:** Pod Security Standards (`restricted`) and Kyverno policies (approved image registries, no privileged pods, required labels).
 - **Identity:** OIDC groups mapped to tenant RBAC; per-tenant IAM roles through EKS Pod Identity.
-- **Data:** an S3 bucket per tenant, accessible only through that tenant's IAM role; MLflow per tenant ([ADR-0007](0007-mlflow-multi-tenancy.md)).
+- **Data:** an S3 bucket per tenant, accessible only through that tenant's IAM role; a shared MLflow with per-tenant permissions and S3 prefixes ([ADR-0007](0007-mlflow-multi-tenancy.md)).
 - **Runtime:** sandboxing and GPU node isolation per [ADR-0008](0008-workload-sandboxing.md).
 - **Cost:** tenant labels on every resource, used by OpenCost for chargeback.
 

@@ -9,7 +9,7 @@
 | **1a. Spike** | Argo Workflows + Kueue + Karpenter GPU queueing | Workflow GPU steps queue per tenant and run on scaled-up GPU nodes |
 | **2. Tenancy** | `Tenant` API (Crossplane), Capsule, quotas, Kueue queues, policies, S3 bucket and IAM role per tenant | Two tenants can't see each other's workflows, data or network traffic; GPU quotas are enforced |
 | **3. ML jobs** | Argo Workflows with SSO, Hera SDK, curated GPU images, golden-path templates, CronWorkflows | An ML engineer submits a Python training job with Hera, and it runs on GPU with artifacts in S3 |
-| **4. Tracking & registry** | MLflow per tenant, connected to the workflow templates | Training runs log to MLflow automatically; models are registered with lineage back to the workflow that produced them |
+| **4. Tracking & registry** | One shared MLflow (RDS PostgreSQL + S3) with OIDC SSO and per-tenant permissions, connected to the workflow templates | Training runs log to MLflow automatically; models are registered with lineage back to the workflow that produced them; tenant A cannot see tenant B's experiments, models or artifacts |
 | **5. Serving & promotion** | `wl-prod` cluster, KServe with vLLM, `ModelDeployment` API, promotion from registry → GitOps PR → canary | Promoting a model in MLflow results in a canary endpoint in prod |
 | **6. Portal & product** | Backstage templates and catalog, notebooks/workspaces, distributed training (Trainer/Ray), metering, billing export, tenant admin | A new tenant onboards and reaches a served model with no operator help |
 

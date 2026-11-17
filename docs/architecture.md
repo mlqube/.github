@@ -12,7 +12,7 @@
 | Tenancy | Tiers: Capsule namespaces, then vCluster, then dedicated cluster | [0004](adr/0004-tenancy-model.md) | Proposed |
 | ML jobs & pipelines | Argo Workflows with the Hera Python SDK | [0005](adr/0005-argo-workflows-with-hera-for-ml-jobs.md) | Accepted |
 | Platform APIs | Crossplane | [0006](adr/0006-platform-apis-with-crossplane.md) | Proposed |
-| Tracking & registry | One MLflow instance per tenant | [0007](adr/0007-mlflow-multi-tenancy.md) | Proposed |
+| Tracking & registry | One shared MLflow (RDS PostgreSQL + S3), isolated by permissions and S3 prefixes | [0007](adr/0007-mlflow-multi-tenancy.md) | Accepted |
 | Untrusted code | gVisor for CPU workloads, tenant-dedicated GPU nodes | [0008](adr/0008-workload-sandboxing.md) | Proposed |
 
 ## Cluster topology on AWS
@@ -25,12 +25,13 @@ flowchart TB
         BS[Backstage portal]
         IDP[Identity provider · OIDC]
         OBS[Central observability]
+        MLFLOW[Shared MLflow<br/>tracking · registry]
     end
 
     subgraph NONPROD["Workload cluster: non-prod (EKS)"]
         NS1[Tenant namespaces]
         AW[Argo Workflows · Kueue]
-        NB[Notebooks · MLflow per tenant]
+        NB[Notebooks]
         NP1[Karpenter NodePools<br/>CPU · GPU · spot-GPU · gVisor]
     end
 
@@ -110,7 +111,7 @@ flowchart TB
 | **Tenancy & identity** | OIDC identity provider (Keycloak or corporate IdP), Capsule / vCluster, NetworkPolicies, Kueue, EKS Pod Identity | Tenant isolation, authentication, RBAC, GPU fair-share, IAM without static keys |
 | **Workspaces** | Kubeflow Notebooks or Coder, curated CUDA/framework images | Self-service development environments |
 | **Jobs & pipelines** | **Argo Workflows + Hera**, golden-path ClusterWorkflowTemplates, CronWorkflows, Kubeflow Trainer / KubeRay for distributed training | Run Python ML code as jobs and pipelines |
-| **Tracking & registry** | MLflow per tenant (RDS PostgreSQL metadata, S3 artifacts) | Experiments, model versions, stage promotion |
+| **Tracking & registry** | One shared MLflow: RDS PostgreSQL backend store, S3 artifact store with a prefix per tenant, OIDC SSO, per-tenant permissions | Experiments, model versions, stage promotion |
 | **Serving** | KServe (vLLM, Triton, sklearn/xgboost runtimes), KEDA / Knative | Autoscaled inference endpoints, canary rollouts |
 | **CI/CD** | GitHub Actions → ECR, Argo CD, Argo Rollouts | Image builds, model promotion through GitOps |
 | **Portal** | Backstage | Templates, model & endpoint catalog, usage and cost views |
@@ -140,7 +141,7 @@ flowchart LR
     KQ --> KP[Karpenter<br/>launches GPU node]
     KP --> POD[Step pods run]
     POD --> S3[(Tenant S3<br/>artifacts)]
-    POD --> MLF[(Tenant MLflow<br/>metrics · models)]
+    POD --> MLF[(Shared MLflow<br/>tenant-scoped)]
 ```
 
 - **Golden-path templates:** `train-evaluate-register`, `batch-inference`, `hyperparameter-sweep`.
@@ -153,7 +154,7 @@ MlQube adds a small set of high-level resources, implemented with Crossplane ([A
 
 | Resource | Expands into |
 |---|---|
-| `Tenant` | Capsule tenant or vCluster, quotas, Kueue queue, network policies, S3 bucket, IAM role, MLflow instance |
+| `Tenant` | Capsule tenant or vCluster, quotas, Kueue queue, network policies, S3 bucket, IAM role, MLflow permissions and S3 artifact prefix |
 | `MLProject` | Project namespace, ECR repository, CI configuration, MLflow experiment, starter WorkflowTemplates |
 | `Workspace` | Notebook/IDE instance with GPU limits and storage |
 | `ModelDeployment` | KServe InferenceService, route, autoscaling, canary policy, dashboards |
@@ -176,7 +177,7 @@ See [ADR-0004](adr/0004-tenancy-model.md) and [ADR-0008](adr/0008-workload-sandb
 sequenceDiagram
     participant Dev as ML engineer
     participant AW as Argo Workflows (non-prod)
-    participant ML as MLflow (tenant)
+    participant ML as MLflow (shared)
     participant Git as GitOps repo
     participant CD as Argo CD (mgmt)
     participant KS as KServe (prod)

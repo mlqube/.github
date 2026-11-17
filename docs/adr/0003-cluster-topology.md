@@ -25,8 +25,8 @@ Use **hub and spoke**:
 
 | Cluster | Runs |
 |---|---|
-| **Management** (`mgmt`) | Argo CD (hub), Crossplane, Backstage, identity provider, central observability |
-| **Workload: non-prod** (`wl-nonprod`) | Tenant namespaces for experimentation: Argo Workflows jobs, notebooks, MLflow, staging endpoints |
+| **Management** (`mgmt`) | Argo CD (hub), Crossplane, Backstage, identity provider, central observability, shared MLflow ([ADR-0007](0007-mlflow-multi-tenancy.md)) |
+| **Workload: non-prod** (`wl-nonprod`) | Tenant namespaces for experimentation: Argo Workflows jobs, notebooks, staging endpoints |
 | **Workload: prod** (`wl-prod`) | Production KServe endpoints and production pipelines (e.g. scheduled retraining) |
 | **Dedicated workload** (later) | One cluster per enterprise tenant ([ADR-0004](0004-tenancy-model.md)) |
 
