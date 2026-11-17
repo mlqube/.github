@@ -14,6 +14,8 @@
 | Platform APIs | Crossplane | [0006](adr/0006-platform-apis-with-crossplane.md) | Accepted |
 | Tracking & registry | One shared MLflow (RDS PostgreSQL + S3), isolated by permissions and S3 prefixes | [0007](adr/0007-mlflow-multi-tenancy.md) | Accepted |
 | Untrusted code | gVisor for CPU workloads, tenant-dedicated GPU nodes | [0008](adr/0008-workload-sandboxing.md) | Accepted |
+| Identity | Corporate IdP over OIDC for all people; groups per tenant; EKS Pod Identity for workloads | [0009](adr/0009-identity-provider.md) | Accepted |
+| Ingress | Internal ALBs (AWS Load Balancer Controller), ACM, Route 53 private zone; KServe networking decided in Phase 5 | [0010](adr/0010-ingress.md) | Accepted |
 
 ## Enterprise view
 
@@ -89,10 +91,11 @@ flowchart TB
         ARGOCD[Argo CD hub]
         XP[Crossplane + AWS provider]
         BS[Backstage portal]
-        IDP[Identity provider · OIDC]
         OBS[Central observability]
         MLFLOW[Shared MLflow<br/>tracking · registry]
     end
+
+    IDP[Corporate IdP · OIDC SSO]
 
     subgraph NONPROD["Workload cluster: non-prod (EKS)"]
         NS1[Tenant namespaces]
@@ -116,6 +119,7 @@ flowchart TB
         PI[EKS Pod Identity · IAM]
     end
 
+    IDP -- SSO --> MGMT
     ARGOCD -- GitOps --> NONPROD
     ARGOCD -- GitOps --> PROD
     XP -- provisions --> AWS
@@ -151,7 +155,7 @@ flowchart TB
         Q[Kueue · GPU quotas]
         SEC[IdP · Kyverno · Capsule · NetworkPolicies]
         OBSC[Prometheus · Grafana · OTel · OpenCost]
-        GW[AWS LB Controller · Gateway API · cert-manager]
+        GW[AWS LB Controller · internal ALBs<br/>ACM · Route 53 · ExternalDNS]
     end
 
     subgraph Infra["AWS infrastructure"]
@@ -172,8 +176,8 @@ flowchart TB
 | Layer | Components | Responsibility |
 |---|---|---|
 | **Infrastructure** | Terraform, Amazon EKS, VPC per environment, Karpenter NodePools (CPU, GPU, spot-GPU, inference, gVisor), NVIDIA GPU Operator, S3, ECR, RDS | Reproducible clusters and elastic GPU capacity |
-| **Platform core** | Argo CD (hub in mgmt cluster), Crossplane (AWS + Kubernetes providers), AWS Load Balancer Controller / Gateway API, cert-manager, External Secrets (Secrets Manager), Kyverno | Declarative delivery, cloud resources, ingress, secrets, policy |
-| **Tenancy & identity** | OIDC identity provider (Keycloak or corporate IdP), Capsule, NetworkPolicies, Kueue, EKS Pod Identity | Tenant isolation, authentication, RBAC, GPU fair-share, IAM without static keys |
+| **Platform core** | Argo CD (hub in mgmt cluster), Crossplane (AWS + Kubernetes providers), AWS Load Balancer Controller (internal ALBs), ACM, ExternalDNS, cert-manager (in-cluster certificates only), External Secrets (Secrets Manager), Kyverno | Declarative delivery, cloud resources, ingress, secrets, policy |
+| **Tenancy & identity** | Corporate IdP over OIDC ([ADR-0009](adr/0009-identity-provider.md)), Capsule, NetworkPolicies, Kueue, EKS Pod Identity | Tenant isolation, authentication, RBAC, GPU fair-share, IAM without static keys |
 | **Workspaces** | Kubeflow Notebooks or Coder, curated CUDA/framework images | Self-service development environments |
 | **Jobs & pipelines** | **Argo Workflows + Hera**, golden-path ClusterWorkflowTemplates, CronWorkflows, Kubeflow Trainer / KubeRay for distributed training | Run Python ML code as jobs and pipelines |
 | **Tracking & registry** | One shared MLflow: RDS PostgreSQL backend store, S3 artifact store with a prefix per tenant, OIDC SSO, per-tenant permissions | Experiments, model versions, stage promotion |
@@ -259,8 +263,9 @@ sequenceDiagram
 
 ## Open questions
 
-1. Identity provider: self-hosted Keycloak, Amazon Cognito, or the organization's corporate IdP (e.g. Entra ID, Okta) through federation
-2. Ingress: AWS Load Balancer Controller only, or Gateway API with Envoy Gateway / Istio
-3. Observability: self-hosted, or Amazon Managed Prometheus/Grafana
-4. Kueue with Argo Workflow pods: to be checked in a Phase 1 spike
-5. Workspaces: Kubeflow Notebooks or Coder
+1. Observability: self-hosted, or Amazon Managed Prometheus/Grafana
+2. Kueue with Argo Workflow pods: to be checked in a Phase 1 spike
+3. Workspaces: Kubeflow Notebooks or Coder
+4. KServe networking for canary rollouts (Knative, or Gateway API with Envoy Gateway): to be decided in Phase 5 ([ADR-0010](adr/0010-ingress.md))
+
+Answered earlier questions: identity provider in [ADR-0009](adr/0009-identity-provider.md), ingress in [ADR-0010](adr/0010-ingress.md).
