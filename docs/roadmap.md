@@ -5,7 +5,7 @@
 | Phase | Goal | Exit criteria |
 |---|---|---|
 | **0. Decisions** ✅ | Settle the key architecture questions as [ADRs](adr/) | ADRs 0001–0008 accepted (done 2026-11-17) |
-| **1. Foundation (AWS)** | Terraform for the VPC and the `mgmt` and `wl-nonprod` EKS clusters; Karpenter with CPU and GPU NodePools; Argo CD hub; identity; observability; local kind setup | `git push` reconciles both clusters; a GPU pod runs on a Karpenter-provisioned node and shows up in dashboards |
+| **1. Foundation (AWS)** ([plan](phase-1-plan.md)) | Terraform for the VPC and the `mgmt` and `wl-nonprod` EKS clusters; Karpenter with CPU and GPU NodePools; Argo CD hub; identity; observability; local kind setup | `git push` reconciles both clusters; a GPU pod runs on a Karpenter-provisioned node and shows up in dashboards |
 | **1a. Spike** | Argo Workflows + Kueue + Karpenter GPU queueing | Workflow GPU steps queue per tenant and run on scaled-up GPU nodes |
 | **2. Tenancy** | `Tenant` API (Crossplane), Capsule, quotas, Kueue queues, policies, S3 bucket and IAM role per tenant | Two tenants can't see each other's workflows, data or network traffic; GPU quotas are enforced |
 | **3. ML jobs** | Argo Workflows with SSO, Hera SDK, curated GPU images, golden-path templates, CronWorkflows | An ML engineer submits a Python training job with Hera, and it runs on GPU with artifacts in S3 |
