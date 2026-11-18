@@ -8,14 +8,19 @@
 
 **Suggested order:** 0 → 1 → 2 → 3, then 4–7 in parallel. Sections 8 and 1a don't need AWS and can start right away.
 
+**Reference build:** the first build runs in a single personal AWS account in **us-west-2**, for one user, at low cost. The platform layer (VPCs, NAT, EKS clusters, nodes, load balancers) is **created with Terraform for each test session and destroyed afterwards**; only a small base layer stays (Terraform state, budget, ECR, DNS zone), costing a few dollars a month.
+
 ## 0. Inputs and decisions (blockers)
 
-- [ ] AWS account(s) and region; whether the management and workload clusters share one account
-- [ ] GPU service quotas (on-demand and spot G/P instance vCPUs) in that region
-- [ ] Network design: CIDR ranges, connectivity between the VPCs (Transit Gateway or peering) and to the corporate network / VPN
-- [ ] DNS domain, e.g. `*.nonprod.mlqube.<corp-domain>`
-- [ ] IdP team agrees to register OIDC apps and create the `mlqube-*` groups ([ADR-0009](adr/0009-identity-provider.md))
-- [ ] ADR-0011: observability, self-hosted or Amazon Managed Prometheus/Grafana
+- [x] AWS account and region: one personal account, **us-west-2**; the management and workload clusters share it (reference build)
+- [x] Human access to AWS: **IAM Identity Center** with an `AdministratorAccess` permission set for the `mlqube-platform-admins` group; CLI through SSO, no long-lived access keys
+- [x] Cost guardrail: AWS Budget of **$50/month** with email alerts at 50%, 80% and 100% of actual spend and 100% of forecast
+- [ ] GPU service quotas in us-west-2: requested **On-Demand G and VT: 4 vCPUs** and **Spot G and VT: 8 vCPUs**; awaiting AWS approval (no P instances)
+- [ ] Network design: VPC CIDR ranges (must not overlap the home network) and connectivity between the VPCs (peering or Transit Gateway)
+- [x] Private access without a corporate VPN: **Tailscale subnet router** in the mgmt VPC, split DNS, EKS API endpoint limited to the owner's IP ([ADR-0011](adr/0011-private-access-reference-build.md))
+- [ ] DNS domain owned by the platform owner, e.g. `*.nonprod.mlqube.<domain>` (needed for ACM certificates)
+- [x] Identity provider: **Microsoft Entra ID** ([ADR-0009](adr/0009-identity-provider.md)); OIDC apps and `mlqube-*` groups still to be created
+- [ ] ADR-0012: observability, self-hosted or Amazon Managed Prometheus/Grafana
 
 ## 1. Repositories and CI
 
@@ -53,12 +58,15 @@
 - [ ] EKS OIDC identity provider association on both clusters; RBAC for `mlqube-platform-admins`
 - [ ] IAM access entries only for automation and break-glass access, with a documented procedure
 
-## 6. Ingress ([ADR-0010](adr/0010-ingress.md))
+## 6. Ingress and private access ([ADR-0010](adr/0010-ingress.md), [ADR-0011](adr/0011-private-access-reference-build.md))
 
-- [ ] One shared internal ALB per cluster (IngressGroup), ACM certificate, HTTPS only, security groups limited to corporate / VPN ranges
-- [ ] Argo CD and Grafana reachable by name from the corporate network
+- [ ] One shared internal ALB per cluster (IngressGroup), ACM certificate, HTTPS only, security groups limited to the VPC and tailnet ranges
+- [ ] Tailnet set up: tag `tag:mlqube-router`, auto-approved routes, split DNS for the MlQube domain, access rules for the owner only
+- [ ] Tailscale subnet router (small EC2 instance in a private mgmt subnet) created and destroyed by Terraform; auth key in Secrets Manager
+- [ ] EKS public endpoint limited to the owner's IP (Terraform variable)
+- [ ] Argo CD and Grafana reachable by name from the laptop through the tailnet
 
-## 7. Observability (per ADR-0011)
+## 7. Observability (per ADR-0012)
 
 - [ ] In `mgmt`: Prometheus (or Amazon Managed Prometheus), Grafana, Loki, OpenTelemetry Collector
 - [ ] In `wl-nonprod`: collectors that send metrics and logs to `mgmt`

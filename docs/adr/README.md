@@ -14,3 +14,4 @@ Each important MlQube architecture decision is recorded as an ADR. To propose a 
 | [0008](0008-workload-sandboxing.md) | Sandboxing and node isolation for untrusted tenant code | Accepted |
 | [0009](0009-identity-provider.md) | Use the corporate identity provider (OIDC) for single sign-on | Accepted |
 | [0010](0010-ingress.md) | Private ingress with the AWS Load Balancer Controller (internal ALBs) | Accepted |
+| [0011](0011-private-access-reference-build.md) | Private access for the reference build with a Tailscale subnet router | Accepted |

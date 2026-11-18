@@ -16,6 +16,7 @@
 | Untrusted code | gVisor for CPU workloads, tenant-dedicated GPU nodes | [0008](adr/0008-workload-sandboxing.md) | Accepted |
 | Identity | Corporate IdP over OIDC for all people; groups per tenant; EKS Pod Identity for workloads | [0009](adr/0009-identity-provider.md) | Accepted |
 | Ingress | Internal ALBs (AWS Load Balancer Controller), ACM, Route 53 private zone; KServe networking decided in Phase 5 | [0010](adr/0010-ingress.md) | Accepted |
+| Private access (reference build) | Tailscale subnet router in the mgmt VPC with split DNS; EKS API endpoint limited to the owner's IP | [0011](adr/0011-private-access-reference-build.md) | Accepted |
 
 ## Enterprise view
 
