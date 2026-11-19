@@ -45,6 +45,7 @@
 
 ## 4. Cluster add-ons (through Argo CD, both clusters)
 
+- [ ] AWS VPC CNI managed add-on with prefix delegation and network policy enforcement on ([ADR-0013](adr/0013-cni-and-network-policy.md)); a default-deny policy verified between two test namespaces
 - [ ] Karpenter with CPU and GPU (spot) NodePools; GPU nodes tainted so only GPU work lands on them
 - [ ] NVIDIA GPU Operator (or device plugin) and the DCGM exporter for GPU metrics
 - [ ] AWS Load Balancer Controller, ExternalDNS, cert-manager (in-cluster certificates only)
