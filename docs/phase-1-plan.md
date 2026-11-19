@@ -15,7 +15,7 @@
 - [x] AWS account and region: one personal account, **us-west-2**; the management and workload clusters share it (reference build)
 - [x] Human access to AWS: **IAM Identity Center** with an `AdministratorAccess` permission set for the `mlqube-platform-admins` group; CLI through SSO, no long-lived access keys
 - [x] Cost guardrail: AWS Budget of **$50/month** with email alerts at 50%, 80% and 100% of actual spend and 100% of forecast
-- [ ] GPU service quotas in us-west-2: requested **On-Demand G and VT: 4 vCPUs** and **Spot G and VT: 8 vCPUs**; awaiting AWS approval (no P instances)
+- [x] GPU service quotas in us-west-2: **On-Demand G and VT: 4 vCPUs** and **Spot G and VT: 8 vCPUs**, approved 2026-11-18 (no P instances)
 - [ ] Network design: VPC CIDR ranges (must not overlap the home network) and connectivity between the VPCs (peering or Transit Gateway)
 - [x] Private access without a corporate VPN: **Tailscale subnet router** in the mgmt VPC, split DNS, EKS API endpoint limited to the owner's IP ([ADR-0011](adr/0011-private-access-reference-build.md))
 - [ ] DNS domain owned by the platform owner, e.g. `*.nonprod.mlqube.<domain>` (needed for ACM certificates)
