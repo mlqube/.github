@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-18
+- **Update:** the build runs with private EKS endpoints only (operator and CI through Tailscale), see [ADR-0014](0014-ci-access-to-private-clusters.md)
 
 ## Context
 

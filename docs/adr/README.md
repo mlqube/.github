@@ -17,3 +17,4 @@ Each important MlQube architecture decision is recorded as an ADR. To propose a 
 | [0011](0011-private-access-reference-build.md) | Private access for the reference build with a Tailscale subnet router | Accepted |
 | 0012 | Observability (reserved, not yet written) | — |
 | [0013](0013-cni-and-network-policy.md) | AWS VPC CNI with prefix delegation and built-in network policy enforcement | Accepted |
+| [0014](0014-ci-access-to-private-clusters.md) | CI reaches the private cluster APIs through Tailscale (Argo CD bootstrap) | Accepted |
