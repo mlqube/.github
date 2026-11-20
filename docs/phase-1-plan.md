@@ -16,9 +16,9 @@
 - [x] Human access to AWS: **IAM Identity Center** with an `AdministratorAccess` permission set for the `mlqube-platform-admins` group; CLI through SSO, no long-lived access keys
 - [x] Cost guardrail: AWS Budget of **$50/month** with email alerts at 50%, 80% and 100% of actual spend and 100% of forecast
 - [x] GPU service quotas in us-west-2: **On-Demand G and VT: 4 vCPUs** and **Spot G and VT: 8 vCPUs**, approved 2026-11-18 (no P instances)
-- [ ] Network design: VPC CIDR ranges (must not overlap the home network) and connectivity between the VPCs (peering or Transit Gateway)
+- [x] Network design: VPCs `mlqube-mgmt` **10.10.0.0/16** and `mlqube-nonprod` **10.20.0.0/16** (10.30.0.0/16 reserved for prod), no overlap with the home network, WSL, Docker/kind or Tailscale; connected by **VPC peering** ([network layer](https://github.com/mlqube/infrastructure/blob/main/live/platform/network/README.md), private repo)
 - [x] Private access without a corporate VPN: **Tailscale subnet router** in the mgmt VPC, split DNS, EKS API endpoint limited to the owner's IP ([ADR-0011](adr/0011-private-access-reference-build.md))
-- [ ] DNS domain owned by the platform owner, e.g. `*.nonprod.mlqube.<domain>` (needed for ACM certificates)
+- [x] DNS domain: **`mlqube.click`**, registered in Route 53; split-horizon DNS (public zone only for certificate validation, private zone attached to the VPCs); ACM certificate for `*.mlqube.click` and `*.nonprod.mlqube.click` **issued** (base layer, 2026-11-20)
 - [x] Identity provider: **Microsoft Entra ID** ([ADR-0009](adr/0009-identity-provider.md)); OIDC apps and `mlqube-*` groups still to be created
 - [ ] ADR-0012: observability, self-hosted or Amazon Managed Prometheus/Grafana
 
