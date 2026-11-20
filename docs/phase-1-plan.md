@@ -39,7 +39,7 @@
 
 ## 3. GitOps bootstrap
 
-- [ ] Terraform installs Argo CD in `mgmt` once; after that, Argo CD manages itself
+- [ ] Terraform installs Argo CD in `mgmt` once, from CI through Tailscale ([ADR-0014](adr/0014-ci-access-to-private-clusters.md)); after that, Argo CD manages itself
 - [ ] App-of-apps / ApplicationSets layout; register `wl-nonprod` as a target cluster; sync waves for ordering
 - [ ] Pinned chart versions; changes roll out to non-prod first
 
