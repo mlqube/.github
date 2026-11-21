@@ -13,6 +13,7 @@ VIEWS = [
     "mlqube_3_management",
     "mlqube_4_ml_lifecycle",
     "mlqube_5_enterprise",
+    "mlqube_6_gitops_hub",
 ]
 
 for name in VIEWS:

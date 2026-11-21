@@ -21,7 +21,7 @@
 
 ## Enterprise view
 
-The architecture is shown in five views, from the big picture down to the details. Every view reads left to right and uses the same swimlane colours. Click an image for the scalable SVG. The sources are in [`diagrams/`](diagrams/) (Python `diagrams` library + Graphviz); `python docs/diagrams/render_all.py` re-renders all of them.
+The architecture is shown in six views: the first five from the big picture down to the details, and view 6 for how changes reach the clusters. Every view reads left to right and uses the same swimlane colours. Click an image for the scalable SVG. The sources are in [`diagrams/`](diagrams/) (Python `diagrams` library + Graphviz); `python docs/diagrams/render_all.py` re-renders all of them.
 
 ### 1. High-level architecture
 
@@ -84,6 +84,35 @@ Numbered flows:
 5. **Provisioning:** Crossplane creates each tenant's S3 bucket, IAM role (EKS Pod Identity) and namespaces.
 6. **SSO:** the corporate IdP (OIDC) signs users in to Backstage, the Argo Workflows UI and MLflow, using the groups `mlqube-<tenant>-admins`, `-developers` and `-viewers`.
 7. **Metrics and cost:** all clusters send metrics and logs to central observability (OpenTelemetry, Prometheus, Loki, Grafana); OpenCost turns them into a showback/chargeback report per BU.
+
+### 6. GitOps hub and spoke
+
+[![MlQube: GitOps hub and spoke, one Argo CD for every cluster](diagrams/mlqube_6_gitops_hub.png)](diagrams/mlqube_6_gitops_hub.svg)
+
+How changes reach the clusters. There is **one Argo CD, in the management cluster** (the hub). The workload clusters (the spokes) **run no Argo CD**: they are registered as destinations, and the hub deploys into them ([ADR-0003](adr/0003-cluster-topology.md), [ADR-0014](adr/0014-ci-access-to-private-clusters.md)).
+
+| | Management cluster (hub) | Workload clusters (spokes: non-prod, later prod) |
+|---|---|---|
+| Runs Argo CD | **Yes**: the single control point | **No** |
+| Role | Decides what runs everywhere: reads Git, compares it with every cluster, applies the differences | Receives what Argo CD sends; runs the ML workloads (jobs, pipelines, endpoints) |
+| Holds | Argo CD and its read-only Git key, the platform tools (later Backstage, MLflow, Crossplane, Grafana) | Only workloads and the add-ons they need; no Git credentials, no deployment tooling |
+
+Numbered flows:
+
+1. **Bootstrap and registration:** on every platform build, Terraform installs Argo CD in the hub (through the private API, ADR-0014) and **registers each workload cluster**: a *cluster secret* in Argo CD (the spoke's API endpoint, CA certificate and "authenticate with AWS as Argo CD's role"), and an **EKS access entry** in the spoke that makes Argo CD's IAM role cluster-admin there.
+2. **Desired state:** Argo CD pulls the GitOps repository with a read-only deploy key. `clusters/<cluster>/` says what runs in each cluster; `platform/` holds add-on settings; `tenants/` (Phase 2) the tenant claims.
+3. **One Application per cluster:** an **ApplicationSet** with a *cluster generator* turns one template per add-on (load balancer controller, ExternalDNS, Karpenter, ...) into one Application per registered cluster, each with that cluster's values (cluster name, VPC, DNS domain, node pools). A new cluster gets every shared add-on as soon as it is registered.
+4. **The hub itself:** Argo CD applies the hub's own add-ons and platform tools in-cluster. The entry point is a single root Application ("app of apps").
+5. **The spokes:** Argo CD's pods get AWS credentials through **EKS Pod Identity**, reach the spoke's **private** API over **VPC peering** (port 443, allowed from the hub's address range), and the spoke's access entry authorizes them. Nothing goes over the internet, and the spokes never call back into the hub.
+6. **Prod (later):** registered the same way. In an enterprise setup prod lives in a separate AWS account; registration then uses a cross-account IAM role instead of a same-account access entry.
+7. **One UI:** the platform team sees and operates every cluster's applications in one Argo CD UI, on a private URL (`argocd.<domain>` behind an internal load balancer), with single sign-on later (ADR-0009).
+
+**Why one hub instead of an Argo CD per cluster:**
+
+- **One place** for the UI, permissions, audit and upgrades.
+- **Lean, safer spokes:** workload clusters hold no Git credentials; a compromised workload cluster can't change what is deployed elsewhere.
+- **Failure mode:** if the hub is down, the spokes **keep running**; only *changes* pause until it is back.
+- **Trade-off:** the hub needs network and IAM access to every spoke. An Argo CD per cluster would avoid that, but makes sense mainly when clusters belong to separate, isolated owners or their networks can't connect.
 
 ## Cluster topology on AWS
 

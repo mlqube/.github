@@ -18,7 +18,7 @@ This is the special `.github` repository for the **MlQube** organization.
 
 [![MlQube: high-level architecture](docs/diagrams/mlqube_1_overview.png)](docs/diagrams/mlqube_1_overview.svg)
 
-📐 **Main architecture diagram:** [full enterprise view (PNG)](docs/diagrams/mlqube_5_enterprise.png) · [SVG](docs/diagrams/mlqube_5_enterprise.svg). The diagram above is the high-level view; the [architecture document](docs/architecture.md#enterprise-view) walks through all five views step by step.
+📐 **Main architecture diagram:** [full enterprise view (PNG)](docs/diagrams/mlqube_5_enterprise.png) · [SVG](docs/diagrams/mlqube_5_enterprise.svg). The diagram above is the high-level view; the [architecture document](docs/architecture.md#enterprise-view) walks through all six views step by step.
 
 MlQube is an internal developer platform for ML/AI on Kubernetes, used by one organization. It **assembles proven open-source components** and adds a thin MlQube glue layer for tenancy, golden paths and cost. What is planned:
 
@@ -42,6 +42,13 @@ MlQube is an internal developer platform for ML/AI on Kubernetes, used by one or
 | [3. Management cluster and shared services](docs/diagrams/mlqube_3_management.png) | What runs in the management cluster and how it uses the shared AWS services |
 | [4. Training, testing and serving](docs/diagrams/mlqube_4_ml_lifecycle.png) | One model's path from Python code to a canary in prod |
 | [5. Full view](docs/diagrams/mlqube_5_enterprise.png) | All parts joined together |
+| [6. GitOps hub and spoke](docs/diagrams/mlqube_6_gitops_hub.png) | One Argo CD in the management cluster deploys to every cluster; workload clusters run no Argo CD |
+
+## GitOps: hub and spoke
+
+[![MlQube: GitOps hub and spoke, one Argo CD for every cluster](docs/diagrams/mlqube_6_gitops_hub.png)](docs/diagrams/mlqube_6_gitops_hub.svg)
+
+**One Argo CD, in the management cluster**, deploys to every cluster. The workload clusters run **no Argo CD**: Terraform registers each one with the hub (a cluster secret in Argo CD, and an EKS access entry for Argo CD's IAM role in the spoke), and Argo CD applies to them over private networking. An ApplicationSet gives every registered cluster the shared add-ons with its own values. If the hub is down, the workload clusters keep running; only changes pause. The flows, and why one hub rather than an Argo CD per cluster, are in the [architecture document](docs/architecture.md#6-gitops-hub-and-spoke).
 
 Decisions behind this design are recorded in the [ADRs](docs/adr/README.md).
 
