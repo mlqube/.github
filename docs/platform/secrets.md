@@ -24,6 +24,8 @@ Ground rules:
 
 The two Tailscale values aren't keys by themselves: the trust credential only accepts a valid GitHub OIDC token from the right repository and branch. They're kept as secrets anyway, so they don't show up in logs.
 
+**Platform secrets that pods need** (e.g. Grafana's admin password, later) go into **AWS Secrets Manager** under `mlqube/platform/<add-on>/<name>`, never into Git or this table's SSM parameters. The [External Secrets Operator](gitops/external-secrets.md) copies them into Kubernetes Secrets. Each one gets a row here when it is added.
+
 ## Trust relationships (no stored secret)
 
 | Who | Trusts | Exactly | Defined in |
@@ -34,7 +36,7 @@ The two Tailscale values aren't keys by themselves: the trust credential only ac
 | **EKS clusters** (access entries) | IAM roles | `mlqube-gha-apply` and the Identity Center **AdministratorAccess** role: cluster-admin. Karpenter node role: node access | [modules/eks-cluster](https://github.com/mlqube/infrastructure/blob/main/modules/eks-cluster/main.tf), [app_pod_identity.tf](https://github.com/mlqube/infrastructure/blob/main/live/platform/addons/mgmt/app_pod_identity.tf) |
 | **Argo CD (Dex)** | IAM Identity Center SAML logins | Only users **assigned** to the `Argo CD (MlQube)` application; group `mlqube-platform-admins` (by ID) → `role:admin`, everyone else no access | Identity Center console, [sso.tf](https://github.com/mlqube/infrastructure/blob/main/live/platform/addons/mgmt/sso.tf) |
 | **Argo CD's IAM role** `mgmt-argocd-…` (Pod Identity) | Pods `argocd/argocd-application-controller` and `argocd/argocd-server` in mgmt | Trusted as **cluster-admin in `wl-nonprod`** through an EKS access entry: how the hub deploys to the spoke. Needs no AWS permissions of its own | [argocd_clusters.tf](https://github.com/mlqube/infrastructure/blob/main/live/platform/addons/mgmt/argocd_clusters.tf) |
-| **Add-on IAM roles** (Pod Identity) | Pods with a given service account | `kube-system/aws-load-balancer-controller`, `kube-system/external-dns`, `karpenter/karpenter`, **one role each per cluster** (and the EBS CSI driver's) | [app_pod_identity.tf](https://github.com/mlqube/infrastructure/blob/main/live/platform/addons/mgmt/app_pod_identity.tf), [modules/eks-cluster](https://github.com/mlqube/infrastructure/blob/main/modules/eks-cluster/main.tf) |
+| **Add-on IAM roles** (Pod Identity) | Pods with a given service account | `kube-system/aws-load-balancer-controller`, `kube-system/external-dns`, `karpenter/karpenter`, `external-secrets/external-secrets` (read-only, Secrets Manager `mlqube/platform/*`), **one role each per cluster** (and the EBS CSI driver's) | [app_pod_identity.tf](https://github.com/mlqube/infrastructure/blob/main/live/platform/addons/mgmt/app_pod_identity.tf), [modules/eks-cluster](https://github.com/mlqube/infrastructure/blob/main/modules/eks-cluster/main.tf) |
 | **Tailnet policy** | Devices with a tag | `tag:mlqube-router` may advertise and auto-approve `10.10.0.0/16`, `10.20.0.0/16`; `tag:ci` may join | Tailscale admin console, [setup step 7](setup.md#7-tailscale-tailnet) |
 
 The immutable subject (`mlqube@<org-id>/…@<repo-id>`) means a deleted and re-created repository with the same name is **not** trusted by AWS or Tailscale until these subjects are updated.

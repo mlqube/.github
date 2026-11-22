@@ -39,6 +39,7 @@ Account-specific identifiers are written as placeholders: `<account-id>` (AWS ac
 | [`clusters/mgmt`](gitops/clusters-mgmt.md) | What the hub Argo CD manages: ApplicationSets, which clusters and their values, conventions | [`clusters/mgmt/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt) |
 | [AWS Load Balancer Controller](gitops/aws-load-balancer-controller.md) | Ingress → internal ALB, with the ingress flow diagram | [`clusters/mgmt/aws-load-balancer-controller/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/aws-load-balancer-controller) |
 | [ExternalDNS](gitops/external-dns.md) | Private DNS records, with the DNS lookup diagram | [`clusters/mgmt/external-dns/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/external-dns) |
+| [External Secrets](gitops/external-secrets.md) | Secrets from AWS Secrets Manager into Kubernetes Secrets; who may read what | [`clusters/mgmt/external-secrets/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/external-secrets) |
 | [Karpenter](gitops/karpenter.md) | Nodes on demand, with the Karpenter flow diagram | [`clusters/mgmt/karpenter/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/karpenter) |
 
 ## Diagrams
