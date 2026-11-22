@@ -19,53 +19,66 @@
 - [x] Network design: VPCs `mlqube-mgmt` **10.10.0.0/16** and `mlqube-nonprod` **10.20.0.0/16** (10.30.0.0/16 reserved for prod), no overlap with the home network, WSL, Docker/kind or Tailscale; connected by **VPC peering** ([network layer](platform/infrastructure/network.md), private repo)
 - [x] Private access without a corporate VPN: **Tailscale subnet router** in the mgmt VPC, split DNS, EKS API endpoint limited to the owner's IP ([ADR-0011](adr/0011-private-access-reference-build.md))
 - [x] DNS domain: **`mlqube.click`**, registered in Route 53; split-horizon DNS (public zone only for certificate validation, private zone attached to the VPCs); ACM certificate for `*.mlqube.click` and `*.nonprod.mlqube.click` **issued** (base layer, 2026-11-20)
-- [x] Identity provider: **Microsoft Entra ID** ([ADR-0009](adr/0009-identity-provider.md)); OIDC apps and `mlqube-*` groups still to be created
+- [x] Identity provider: **AWS IAM Identity Center** as the identity hub ([ADR-0015](adr/0015-iam-identity-center-identity-hub.md), amends [ADR-0009](adr/0009-identity-provider.md)); tools through SAML (Dex), `kubectl` through access entries
 - [ ] ADR-0012: observability, self-hosted or Amazon Managed Prometheus/Grafana
 
 ## 1. Repositories and CI
 
-- [ ] Create `mlqube/infrastructure` (Terraform) and `mlqube/gitops` (Argo CD apps and add-on configuration)
-- [ ] Branch protection and CODEOWNERS
-- [ ] CI without static keys: GitHub Actions assumes an AWS role through OIDC; `terraform fmt`, `validate`, tflint and checkov, and `plan` on pull requests, `apply` on merge
-- [ ] Terraform state backend: S3 bucket with locking, encrypted
+- [x] Create `mlqube/infrastructure` (Terraform) and `mlqube/gitops` (Argo CD apps and add-on configuration); both private
+- [ ] Branch protection and CODEOWNERS (branch protection on private repositories needs a paid GitHub plan)
+- [x] CI without static keys: GitHub Actions assumes AWS roles through OIDC (`plan` and `apply` roles, [bootstrap](platform/infrastructure/bootstrap.md)); pre-commit (`terraform fmt`, `validate`, secrets, YAML) and `plan` on pull requests; `apply`/`destroy` by hand through the `platform` workflow (the platform is built per session, not on merge)
+- [ ] tflint and checkov in the checks
+- [x] Terraform state backend: S3 bucket, encrypted, S3-native locking
 
 ## 2. AWS foundation (Terraform)
 
-- [ ] VPCs for shared services (`mgmt`) and non-prod: private subnets only, NAT, VPC endpoints (S3, ECR, STS, Secrets Manager)
-- [ ] Connectivity between the VPCs and to the corporate network; Route 53 private hosted zone and Resolver endpoints for corporate DNS
-- [ ] EKS clusters `mgmt` and `wl-nonprod`: pinned versions, a small managed node group for system pods, EKS add-ons (VPC CNI, CoreDNS, kube-proxy, EBS CSI driver, Pod Identity agent)
-- [ ] KMS encryption for Kubernetes secrets; tagging scheme (`mlqube/*` and cost allocation tags); AWS Budgets alerts
-- [ ] IAM roles through EKS Pod Identity for the platform controllers (Karpenter, AWS Load Balancer Controller, ExternalDNS, External Secrets)
+- [x] VPCs for shared services (`mgmt`) and non-prod: private subnets for nodes, NAT, S3 gateway endpoint; interface endpoints (ECR, STS, Secrets Manager) available but off to save cost ([network layer](platform/infrastructure/network.md))
+- [x] Connectivity between the VPCs (peering) and the private hosted zone `mlqube.click`; the Tailscale router stands in for the corporate network (no Resolver endpoints in the reference build)
+- [x] EKS clusters `mgmt` and `wl-nonprod`: pinned versions (1.36), a small managed node group for system pods, EKS add-ons (VPC CNI, CoreDNS, kube-proxy, EBS CSI driver, Pod Identity agent)
+- [x] Tagging scheme (`mlqube/*` default tags) and AWS Budgets alerts
+- [ ] KMS encryption for Kubernetes secrets: left out of the reference build (a customer-managed key costs about $1 per create/destroy cycle); EKS's default encryption applies
+- [x] IAM roles through EKS Pod Identity for Karpenter, the AWS Load Balancer Controller and ExternalDNS, one set per cluster ([addons-mgmt](platform/infrastructure/addons-mgmt.md))
+- [ ] Pod Identity role for External Secrets
 
 ## 3. GitOps bootstrap
 
-- [ ] Terraform installs Argo CD in `mgmt` once, from CI through Tailscale ([ADR-0014](adr/0014-ci-access-to-private-clusters.md)); after that, Argo CD manages itself
-- [ ] App-of-apps / ApplicationSets layout; register `wl-nonprod` as a target cluster; sync waves for ordering
-- [ ] Pinned chart versions; changes roll out to non-prod first
+- [x] Terraform installs Argo CD in `mgmt` from CI through Tailscale ([ADR-0014](adr/0014-ci-access-to-private-clusters.md)), at `https://argocd.mlqube.click` (internal ALB)
+- [ ] After that, Argo CD manages itself (today Terraform also upgrades it)
+- [x] App of apps with one ApplicationSet per add-on; `wl-nonprod` registered as a spoke (hub and spoke, [clusters/mgmt](platform/gitops/clusters-mgmt.md))
+- [x] Argo CD projects: `bootstrap` (root app), `platform` (add-ons), `default` locked down (merged; to verify at the next build)
+- [ ] Sync waves for ordering ([#13](https://github.com/mlqube/.github/issues/13))
+- [x] Pinned chart versions
+- [ ] Changes roll out to non-prod first
 
 ## 4. Cluster add-ons (through Argo CD, both clusters)
 
-- [ ] AWS VPC CNI managed add-on with prefix delegation and network policy enforcement on ([ADR-0013](adr/0013-cni-and-network-policy.md)); a default-deny policy verified between two test namespaces
-- [ ] Karpenter with CPU and GPU (spot) NodePools; GPU nodes tainted so only GPU work lands on them
+- [x] AWS VPC CNI managed add-on with prefix delegation and network policy enforcement on ([ADR-0013](adr/0013-cni-and-network-policy.md))
+- [ ] A default-deny policy verified between two test namespaces
+- [x] Karpenter with a CPU NodePool per cluster (spot first)
+- [ ] Karpenter scale test on both clusters; GPU (spot) NodePool in `wl-nonprod`, tainted so only GPU work lands on it
 - [ ] NVIDIA GPU Operator (or device plugin) and the DCGM exporter for GPU metrics
-- [ ] AWS Load Balancer Controller, ExternalDNS, cert-manager (in-cluster certificates only)
+- [x] AWS Load Balancer Controller, ExternalDNS
+- [ ] cert-manager (in-cluster certificates only)
 - [ ] External Secrets Operator connected to AWS Secrets Manager
 - [ ] Kyverno baseline policies (no privileged pods, required labels); metrics-server
 
 ## 5. Identity ([ADR-0009](adr/0009-identity-provider.md))
 
-- [ ] OIDC applications for Argo CD and Grafana; tokens carry only the `mlqube-*` groups
-- [ ] Check the group claim format (names vs object IDs, overage claim) and record the result
-- [ ] EKS OIDC identity provider association on both clusters; RBAC for `mlqube-platform-admins`
-- [ ] IAM access entries only for automation and break-glass access, with a documented procedure
+Mechanism changed by [ADR-0015](adr/0015-iam-identity-center-identity-hub.md): IAM Identity Center, SAML through Dex, access entries instead of an EKS OIDC provider.
+
+- [x] Argo CD sign-in through Identity Center (SAML app, Dex); `mlqube-platform-admins` → `role:admin`, everyone else no access; local admin off (merged; to verify at the next build)
+- [x] Group claim format checked: Identity Center sends group **IDs**; the ID is kept in SSM Parameter Store
+- [ ] Grafana sign-in the same way (with observability)
+- [x] `kubectl` through Identity Center roles and EKS access entries; CI and Argo CD through their own access entries
 
 ## 6. Ingress and private access ([ADR-0010](adr/0010-ingress.md), [ADR-0011](adr/0011-private-access-reference-build.md))
 
-- [ ] One shared internal ALB per cluster (IngressGroup), ACM certificate, HTTPS only, security groups limited to the VPC and tailnet ranges
-- [ ] Tailnet set up: tag `tag:mlqube-router`, auto-approved routes, split DNS for the MlQube domain, access rules for the owner only
-- [ ] Tailscale subnet router (small EC2 instance in a private mgmt subnet) created and destroyed by Terraform; auth key in Secrets Manager
-- [ ] EKS public endpoint limited to the owner's IP (Terraform variable)
-- [ ] Argo CD and Grafana reachable by name from the laptop through the tailnet
+- [x] One shared internal ALB per cluster (IngressGroup `mlqube-mgmt`), ACM certificate, HTTPS only, inbound limited to the VPC ranges
+- [x] Tailnet set up: router tag, auto-approved routes, split DNS for `mlqube.click`; CI joins as `tag:ci` through workload identity
+- [x] Tailscale subnet router (small EC2 instance in a private mgmt subnet) created and destroyed by Terraform; auth key in SSM Parameter Store
+- [x] EKS API private by default, reached through the tailnet; a public endpoint limited to given IPs is an optional Terraform variable
+- [x] Argo CD reachable by name from the laptop through the tailnet
+- [ ] Grafana the same way (with observability)
 
 ## 7. Observability (per ADR-0012)
 
