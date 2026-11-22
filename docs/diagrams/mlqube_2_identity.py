@@ -1,8 +1,9 @@
 """MlQube view 2: identity - how people are authenticated and authorized.
 
-People sign in once through the corporate IdP (OIDC). Their IdP groups
-(mlqube-<tenant>-admins / -developers / -viewers) decide what they can do in each
-tool and in the tenant's namespaces. Workloads never use static keys: they get a
+People sign in once through IAM Identity Center (fed by the corporate directory in an
+enterprise). Their Identity Center groups (mlqube-<tenant>-admins / -developers / -viewers)
+decide what they can do in each tool (SAML via Dex) and in the tenant's namespaces
+(permission set -> IAM role -> EKS access entry). Workloads never use static keys: they get a
 per-tenant IAM role through EKS Pod Identity.
 
 Run: python docs/diagrams/mlqube_2_identity.py  ->  mlqube_2_identity.png / .svg
@@ -22,6 +23,7 @@ from diagrams.aws.security import (
     IdentityAndAccessManagementIamAWSSts,
     IdentityAndAccessManagementIamRole,
     SecretsManager,
+    SingleSignOn,
 )
 from diagrams.aws.storage import SimpleStorageServiceS3Bucket
 from diagrams.custom import Custom
@@ -33,15 +35,15 @@ from diagrams.onprem.client import User, Users
 from diagrams.onprem.gitops import Argocd
 from diagrams.onprem.mlops import Mlflow
 from diagrams.onprem.monitoring import Grafana
-from diagrams.saas.identity import Okta
+from diagrams.saas.identity import Okta  # stands for the optional corporate directory
 
 NAME = "mlqube_2_identity"
 
 FLOWS = [
     (1, TEAL, "dashed", "Users reach the portals over the corporate network / VPN, through a private ALB (TLS from ACM)"),
-    (2, TEAL, "dashed", "Each tool signs the user in with the corporate IdP (OIDC + MFA); the ID token carries the user's groups"),
+    (2, TEAL, "dashed", "IAM Identity Center signs the user in (MFA) and sends a SAML assertion with the group IDs to Dex; Dex gives each tool an OIDC token with the groups"),
     (3, SLATE, "bold", "Each tool maps groups to tenant roles: admins / developers / viewers of their own tenant only"),
-    (4, SLATE, "bold", "kubectl uses the same OIDC token; RBAC + Capsule limit users to their tenant's namespaces"),
+    (4, SLATE, "bold", "kubectl: Identity Center permission set → IAM role → EKS access entry; RBAC + Capsule limit users to their tenant's namespaces"),
     (5, SLATE, "bold", "Every object is checked at admission by Kyverno and Capsule (tenant labels, quotas, allowed images)"),
     (6, GREEN, "bold", "Workloads: tenant ServiceAccount → EKS Pod Identity → per-tenant IAM role → only that tenant's AWS resources"),
 ]
@@ -51,7 +53,7 @@ def build():
     diagram = new_diagram(
         NAME,
         "MlQube: Identity, authentication and authorization",
-        "2 · Single sign-on with the corporate IdP · groups per tenant · no static cloud keys for workloads",
+        "2 · Single sign-on through IAM Identity Center · groups per tenant · no static cloud keys for workloads",
         ranksep="1.5",
         nodesep="0.8",
     )
@@ -64,11 +66,12 @@ def build():
 
         with lane("Corporate edge & identity", "edge"):
             vpn = VPN("Corporate network / VPN")
+            corp = Okta("Corporate directory\n(optional: Entra ID / Okta)\nSAML + SCIM into\nIdentity Center")
             groups = Group(
-                "IdP groups per tenant\nmlqube-<tenant>-admins\nmlqube-<tenant>-developers\n"
+                "Identity Center groups\nper tenant\nmlqube-<tenant>-admins\nmlqube-<tenant>-developers\n"
                 "mlqube-<tenant>-viewers\ne.g. tenant = retail-1042"
             )
-            idp = Okta("Corporate IdP\n(Entra ID / Okta)\nOIDC · MFA · conditional access")
+            idp = SingleSignOn("IAM Identity Center\nMFA · permission sets\nSAML applications")
 
         with lane("AWS account · region", "aws", fontsize="20"):
             with lane("Private entry (shared services)", "shared"):
@@ -78,17 +81,19 @@ def build():
 
             with lane("Workload clusters (non-prod · prod)", "nonprod"):
                 with box("Sign-in points "):
-                    eks_api = API("EKS API server\nOIDC identity provider\n(kubectl)")
+                    eks_api = API("EKS API server\naccess entries:\nIdentity Center role\n→ Kubernetes groups")
                     argo_wf = Custom("Argo Workflows\nserver + UI (SSO)", icon("argo"))
                 with box("Authorization in the cluster"):
                     kyverno = Custom("Kyverno + Capsule\nadmission policies", icon("kyverno"))
-                    k8s_rbac = RB("Kubernetes RBAC\nCapsule tenant owners\n= IdP groups")
+                    k8s_rbac = RB("Kubernetes RBAC\nCapsule tenant owners\n= Identity Center groups")
                     argo_rbac = Custom("Argo Workflows SSO RBAC\ngroup → tenant\nServiceAccount", icon("argo"))
                 with box("Workload identity (no static keys)"):
                     pod = Pod("Tenant pod\nServiceAccount in\nretail-1042-churn")
                     pod_identity = IdentityAndAccessManagementIamAWSSts("EKS Pod Identity\n(temporary credentials)")
 
             with lane("Management cluster", "mgmt"):
+                with box("Identity broker"):
+                    dex = Pod("Dex\nSAML (Identity Center)\n→ OIDC for the tools")
                 with box("Sign-in points"):
                     argocd = Argocd("Argo CD UI\nplatform admins only")
                     grafana = Grafana("Grafana\ndashboards per tenant")
@@ -116,10 +121,12 @@ def build():
         viewer >> plain() >> vpn
         admin >> plain() >> vpn
 
-        # ② OIDC sign-in with group claims
+        # ② sign-in: Identity Center (SAML) -> Dex -> each tool (OIDC + groups)
+        corp >> plain(style="dotted") >> idp
         groups >> plain() >> idp
+        idp >> step(2, TEAL, "SAML assertion + group IDs", style="dashed") >> dex
         for app in (backstage, mlflow, grafana, argocd, argo_wf):
-            idp >> step(2, TEAL, "OIDC ID token + groups", style="dashed") >> app
+            dex >> step(2, TEAL, "OIDC token + groups", style="dashed") >> app
 
         # ③ tools map groups to tenant roles
         backstage >> step(3, SLATE, "owner / member") >> backstage_perm
@@ -128,7 +135,8 @@ def build():
         argo_wf >> step(3, SLATE, "group → SA") >> argo_rbac
 
         # ④ kubectl / Kubernetes API
-        dev >> step(4, SLATE, "kubectl with OIDC token") >> eks_api
+        dev >> step(4, SLATE, "kubectl (aws eks get-token)") >> eks_api
+        idp >> step(4, SLATE, "permission set → IAM role → access entry") >> eks_api
         eks_api >> step(4, SLATE, "group → RoleBinding") >> k8s_rbac
 
         # ⑤ admission
@@ -146,8 +154,8 @@ def build():
             diagram,
             [
                 [dev, viewer, admin],
-                [idp, groups, vpn],
-                [alb, route53, acm],
+                [idp, groups, corp, vpn],
+                [alb, route53, acm, dex],
                 [backstage, mlflow, grafana, argocd, argo_wf, eks_api],
                 [backstage_perm, mlflow_perm, grafana_perm, argo_rbac, k8s_rbac, kyverno],
                 [pod],
