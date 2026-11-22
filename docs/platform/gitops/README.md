@@ -35,7 +35,7 @@ Everything is a pull request to this repository; Argo CD picks up the merge with
 
 | To | Do |
 |---|---|
-| **Add** an add-on | Add a folder `clusters/mgmt/<name>/` with `applicationset.yaml` (an `ApplicationSet` for every cluster; a plain `Application` for one cluster only) and a README |
+| **Add** an add-on | Add a folder `clusters/mgmt/<name>/` with `applicationset.yaml` (an `ApplicationSet` for every cluster; a plain `Application` for one cluster only, both with `project: platform`) and a README, and allow its chart repository, namespace and cluster-wide kinds in the `platform` project ([projects](clusters-mgmt.md#argo-cd-projects-what-each-application-may-do)) |
 | **Upgrade** it | Change `targetRevision` (the chart version) in that file |
 | **Change its settings** | Change the values in that file |
 | **Remove** it | Delete the file: `root` deletes the child Application, and its finalizer uninstalls the add-on |
@@ -52,7 +52,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io # deleting the Application uninstalls the add-on
 spec:
-  project: default
+  project: platform # the add-ons' Argo CD project
   source:
     repoURL: https://kubernetes-sigs.github.io/external-dns/
     chart: external-dns
