@@ -1,7 +1,6 @@
 """MlQube view 2: identity - how people are authenticated and authorized.
 
-People sign in once through IAM Identity Center (fed by the corporate directory in an
-enterprise). Their Identity Center groups (mlqube-<tenant>-admins / -developers / -viewers)
+People sign in once through IAM Identity Center. Their Identity Center groups (mlqube-<tenant>-admins / -developers / -viewers)
 decide what they can do in each tool (SAML via Dex) and in the tenant's namespaces
 (permission set -> IAM role -> EKS access entry). Workloads never use static keys: they get a
 per-tenant IAM role through EKS Pod Identity.
@@ -35,7 +34,6 @@ from diagrams.onprem.client import User, Users
 from diagrams.onprem.gitops import Argocd
 from diagrams.onprem.mlops import Mlflow
 from diagrams.onprem.monitoring import Grafana
-from diagrams.saas.identity import Okta  # stands for the optional corporate directory
 
 NAME = "mlqube_2_identity"
 
@@ -66,7 +64,6 @@ def build():
 
         with lane("Corporate edge & identity", "edge"):
             vpn = VPN("Corporate network / VPN")
-            corp = Okta("Corporate directory\n(optional: Entra ID / Okta)\nSAML + SCIM into\nIdentity Center")
             groups = Group(
                 "Identity Center groups\nper tenant\nmlqube-<tenant>-admins\nmlqube-<tenant>-developers\n"
                 "mlqube-<tenant>-viewers\ne.g. tenant = retail-1042"
@@ -122,7 +119,6 @@ def build():
         admin >> plain() >> vpn
 
         # ② sign-in: Identity Center (SAML) -> Dex -> each tool (OIDC + groups)
-        corp >> plain(style="dotted") >> idp
         groups >> plain() >> idp
         idp >> step(2, TEAL, "SAML assertion + group IDs", style="dashed") >> dex
         for app in (backstage, mlflow, grafana, argocd, argo_wf):
@@ -154,7 +150,7 @@ def build():
             diagram,
             [
                 [dev, viewer, admin],
-                [idp, groups, corp, vpn],
+                [idp, groups, vpn],
                 [alb, route53, acm, dex],
                 [backstage, mlflow, grafana, argocd, argo_wf, eks_api],
                 [backstage_perm, mlflow_perm, grafana_perm, argo_rbac, k8s_rbac, kyverno],

@@ -23,7 +23,7 @@ from diagrams.aws.security import SingleSignOn
 NAME = "mlqube_1_overview"
 
 FLOWS = [
-    (None, TEAL, "dashed", "Identity: single sign-on through IAM Identity Center (a corporate directory can feed it)"),
+    (None, TEAL, "dashed", "Identity: single sign-on through IAM Identity Center"),
     (None, BLUE, "bold", "Code: ML engineers push Python (Hera) pipelines to GitHub"),
     (None, ORANGE, "bold", "Delivery: the management cluster deploys and provisions everything through GitOps"),
     (None, PURPLE, "bold", "Models: promotion from non-prod to prod, then serving to applications"),
@@ -50,7 +50,7 @@ def build():
         with lane("Corporate edge & identity", "edge"):
             terraform = Terraform("Terraform\ninfrastructure as code")
             github = Github("GitHub\ncode · GitOps repos · Actions")
-            idp = SingleSignOn("IAM Identity Center\nSSO · groups per tenant\n(fed by the corporate\ndirectory in an enterprise)")
+            idp = SingleSignOn("IAM Identity Center\nSSO · MFA\ngroups per tenant")
 
         with lane("AWS account · region", "aws", fontsize="20"):
             with lane("Shared AWS services", "shared"):
