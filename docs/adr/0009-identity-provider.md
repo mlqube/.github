@@ -1,6 +1,6 @@
 # ADR-0009: Use the corporate identity provider (OIDC) for single sign-on
 
-- **Status:** Accepted
+- **Status:** Accepted, **amended by [ADR-0015](0015-iam-identity-center-identity-hub.md)**: IAM Identity Center is the identity hub (SAML through Dex for the tools, access entries for `kubectl`). The goals below still hold; the mechanism is ADR-0015's.
 - **Date:** 2026-11-17
 
 ## Context

@@ -56,7 +56,7 @@ Examples: `retail-1042`, `risk-analytics-2001`
 - **Compute:** ResourceQuota and LimitRange, plus a Kueue ClusterQueue per tenant for fair sharing of GPUs (BUs can borrow idle capacity from each other).
 - **Network:** default-deny NetworkPolicies, with egress only to allowed destinations.
 - **Policy:** Pod Security Standards (`restricted`) and Kyverno policies (approved registries, no privileged pods, a required `mlqube/tenant` label, names must use the tenant's prefix).
-- **Identity:** corporate SSO (OIDC); IdP groups per tenant mapped to RBAC in the tenant's namespaces.
+- **Identity:** SSO through IAM Identity Center ([ADR-0015](0015-iam-identity-center-identity-hub.md)); Identity Center groups per tenant mapped to RBAC in the tenant's namespaces.
 - **Data:** an S3 bucket per tenant and per environment, accessible only through the tenant's IAM role; shared MLflow with per-tenant permissions and S3 prefixes ([ADR-0007](0007-mlflow-multi-tenancy.md)).
 - **Runtime:** sandboxing and GPU node isolation per [ADR-0008](0008-workload-sandboxing.md).
 - **Cost:** showback/chargeback per BU, based on the tenant label.

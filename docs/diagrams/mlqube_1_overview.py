@@ -18,12 +18,12 @@ from diagrams.custom import Custom
 from diagrams.onprem.client import User, Users
 from diagrams.onprem.iac import Terraform
 from diagrams.onprem.vcs import Github
-from diagrams.saas.identity import Okta
+from diagrams.aws.security import SingleSignOn
 
 NAME = "mlqube_1_overview"
 
 FLOWS = [
-    (None, TEAL, "dashed", "Identity: single sign-on with the corporate IdP"),
+    (None, TEAL, "dashed", "Identity: single sign-on through IAM Identity Center (a corporate directory can feed it)"),
     (None, BLUE, "bold", "Code: ML engineers push Python (Hera) pipelines to GitHub"),
     (None, ORANGE, "bold", "Delivery: the management cluster deploys and provisions everything through GitOps"),
     (None, PURPLE, "bold", "Models: promotion from non-prod to prod, then serving to applications"),
@@ -50,7 +50,7 @@ def build():
         with lane("Corporate edge & identity", "edge"):
             terraform = Terraform("Terraform\ninfrastructure as code")
             github = Github("GitHub\ncode · GitOps repos · Actions")
-            idp = Okta("Corporate IdP\n(Entra ID / Okta)\nOIDC SSO · groups per tenant")
+            idp = SingleSignOn("IAM Identity Center\nSSO · groups per tenant\n(fed by the corporate\ndirectory in an enterprise)")
 
         with lane("AWS account · region", "aws", fontsize="20"):
             with lane("Shared AWS services", "shared"):
@@ -71,7 +71,7 @@ def build():
 
         # identity
         bus >> link("sign in", TEAL, "dashed") >> idp
-        idp >> link("OIDC SSO\n(portals · UIs)", TEAL, "dashed") >> mgmt
+        idp >> link("SAML SSO via Dex\n(portals · UIs)", TEAL, "dashed") >> mgmt
 
         # code and delivery
         bus >> link("Python + Hera", BLUE) >> github

@@ -18,3 +18,4 @@ Each important MlQube architecture decision is recorded as an ADR. To propose a 
 | 0012 | Observability (reserved, not yet written) | — |
 | [0013](0013-cni-and-network-policy.md) | AWS VPC CNI with prefix delegation and built-in network policy enforcement | Accepted |
 | [0014](0014-ci-access-to-private-clusters.md) | CI reaches the private cluster APIs through Tailscale (Argo CD bootstrap) | Accepted |
+| [0015](0015-iam-identity-center-identity-hub.md) | IAM Identity Center as the identity hub (amends 0009) | Accepted |

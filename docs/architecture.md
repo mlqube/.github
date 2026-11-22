@@ -14,7 +14,7 @@
 | Platform APIs | Crossplane | [0006](adr/0006-platform-apis-with-crossplane.md) | Accepted |
 | Tracking & registry | One shared MLflow (RDS PostgreSQL + S3), isolated by permissions and S3 prefixes | [0007](adr/0007-mlflow-multi-tenancy.md) | Accepted |
 | Untrusted code | gVisor for CPU workloads, tenant-dedicated GPU nodes | [0008](adr/0008-workload-sandboxing.md) | Accepted |
-| Identity | Corporate IdP over OIDC for all people; groups per tenant; EKS Pod Identity for workloads | [0009](adr/0009-identity-provider.md) | Accepted |
+| Identity | IAM Identity Center as the identity hub (fed by the corporate directory in an organization); tools through SAML (Dex where needed); `kubectl` through Identity Center roles and EKS access entries; groups per tenant; EKS Pod Identity for workloads | [0009](adr/0009-identity-provider.md), [0015](adr/0015-iam-identity-center-identity-hub.md) | Accepted |
 | Ingress | Internal ALBs (AWS Load Balancer Controller), ACM, Route 53 private zone; KServe networking decided in Phase 5 | [0010](adr/0010-ingress.md) | Accepted |
 | Private access (reference build) | Tailscale subnet router in the mgmt VPC with split DNS; EKS API endpoint limited to the owner's IP | [0011](adr/0011-private-access-reference-build.md) | Accepted |
 | Pod networking | AWS VPC CNI with prefix delegation; it also enforces the default-deny network policies; Calico possible later in policy-only mode | [0013](adr/0013-cni-and-network-policy.md) | Accepted |
@@ -27,16 +27,16 @@ The architecture is shown in six views: the first five from the big picture down
 
 [![MlQube: high-level architecture](diagrams/mlqube_1_overview.png)](diagrams/mlqube_1_overview.svg)
 
-Business units (tenants) sign in through the corporate IdP and push Python (Hera) code to GitHub. The **management cluster** is the platform's control plane: it deploys and provisions everything through GitOps. ML work happens in the **non-prod workload cluster**; promoted models are served from the **prod workload cluster** to business applications. All clusters use the shared AWS services, and the platform reports policy, audit and cost per business unit.
+Business units (tenants) sign in through IAM Identity Center and push Python (Hera) code to GitHub. The **management cluster** is the platform's control plane: it deploys and provisions everything through GitOps. ML work happens in the **non-prod workload cluster**; promoted models are served from the **prod workload cluster** to business applications. All clusters use the shared AWS services, and the platform reports policy, audit and cost per business unit.
 
 ### 2. Identity, authentication and authorization
 
 [![MlQube: identity, authentication and authorization](diagrams/mlqube_2_identity.png)](diagrams/mlqube_2_identity.svg)
 
 1. Users reach the portals over the corporate network / VPN, through a private ALB with TLS certificates from ACM.
-2. Each tool (Backstage, MLflow, Grafana, Argo CD, Argo Workflows) signs the user in with the corporate IdP (OIDC + MFA). The ID token carries the user's groups: `mlqube-<tenant>-admins`, `-developers`, `-viewers`.
+2. IAM Identity Center signs the user in (with MFA; in an organization through the corporate directory that feeds it) and sends a SAML assertion with the user's group IDs to **Dex** in the management cluster. Dex gives each tool (Backstage, MLflow, Grafana, Argo CD, Argo Workflows) an OIDC token carrying the groups: `mlqube-<tenant>-admins`, `-developers`, `-viewers`.
 3. Each tool maps those groups to roles in the user's own tenant only: Backstage ownership, MLflow permissions on the tenant's experiments and models, Grafana teams, Argo Workflows SSO RBAC.
-4. `kubectl` uses the same OIDC token against the EKS API; Kubernetes RBAC and Capsule limit users to their tenant's namespaces.
+4. `kubectl`: an Identity Center permission set gives the user an IAM role; the EKS **access entry** for that role maps it to Kubernetes groups. Kubernetes RBAC and Capsule limit users to their tenant's namespaces.
 5. Kyverno and Capsule check every object at admission (tenant labels, quotas, allowed images).
 6. Workloads never hold static cloud keys: a tenant pod's ServiceAccount gets temporary credentials for the tenant's IAM role through EKS Pod Identity, which can reach only that tenant's S3 bucket, ECR repositories and secrets.
 
@@ -73,7 +73,7 @@ The management cluster runs the platform itself; tenant workloads never run ther
 
 [![MlQube: Enterprise ML Platform on AWS, full view](diagrams/mlqube_5_enterprise.png)](diagrams/mlqube_5_enterprise.svg)
 
-All parts joined together: **people and business units** (tenants such as `retail-1042`, `risk-analytics-2001` and `marketing-3007`, plus the platform team and Finance/FinOps), the **corporate edge and identity** (corporate IdP, VPN, GitHub org, Terraform), the **AWS account** (management cluster, non-prod and prod workload clusters, shared AWS services), and **governance and FinOps**.
+All parts joined together: **people and business units** (tenants such as `retail-1042`, `risk-analytics-2001` and `marketing-3007`, plus the platform team and Finance/FinOps), the **corporate edge and identity** (IAM Identity Center, VPN, GitHub org, Terraform), the **AWS account** (management cluster, non-prod and prod workload clusters, shared AWS services), and **governance and FinOps**.
 
 Numbered flows:
 
@@ -82,7 +82,7 @@ Numbered flows:
 3. **Model promotion:** promoting a model in MLflow opens a GitOps PR in GitHub; on merge, Argo CD deploys a KServe canary (vLLM for LLMs) in the prod cluster.
 4. **GitOps:** Argo CD in the management cluster syncs both workload clusters.
 5. **Provisioning:** Crossplane creates each tenant's S3 bucket, IAM role (EKS Pod Identity) and namespaces.
-6. **SSO:** the corporate IdP (OIDC) signs users in to Backstage, the Argo Workflows UI and MLflow, using the groups `mlqube-<tenant>-admins`, `-developers` and `-viewers`.
+6. **SSO:** IAM Identity Center (SAML, through Dex) signs users in to Backstage, the Argo Workflows UI and MLflow, using the groups `mlqube-<tenant>-admins`, `-developers` and `-viewers`.
 7. **Metrics and cost:** all clusters send metrics and logs to central observability (OpenTelemetry, Prometheus, Loki, Grafana); OpenCost turns them into a showback/chargeback report per BU.
 
 ### 6. GitOps hub and spoke
@@ -126,7 +126,7 @@ flowchart TB
         MLFLOW[Shared MLflow<br/>tracking · registry]
     end
 
-    IDP[Corporate IdP · OIDC SSO]
+    IDP[IAM Identity Center · SSO]
 
     subgraph NONPROD["Workload cluster: non-prod (EKS)"]
         NS1[Tenant namespaces]
@@ -184,7 +184,7 @@ flowchart TB
         GITOPS[Argo CD · GitOps]
         XPC[Crossplane]
         Q[Kueue · GPU quotas]
-        SEC[IdP · Kyverno · Capsule · NetworkPolicies]
+        SEC[Identity Center · Kyverno · Capsule · NetworkPolicies]
         OBSC[Prometheus · Grafana · OTel · OpenCost]
         GW[AWS LB Controller · internal ALBs<br/>ACM · Route 53 · ExternalDNS]
     end
@@ -208,10 +208,10 @@ flowchart TB
 |---|---|---|
 | **Infrastructure** | Terraform, Amazon EKS, VPC per environment, Karpenter NodePools (CPU, GPU, spot-GPU, inference, gVisor), NVIDIA GPU Operator, S3, ECR, RDS | Reproducible clusters and elastic GPU capacity |
 | **Platform core** | Argo CD (hub in mgmt cluster), Crossplane (AWS + Kubernetes providers), AWS Load Balancer Controller (internal ALBs), ACM, ExternalDNS, cert-manager (in-cluster certificates only), External Secrets (Secrets Manager), Kyverno | Declarative delivery, cloud resources, ingress, secrets, policy |
-| **Tenancy & identity** | Corporate IdP over OIDC ([ADR-0009](adr/0009-identity-provider.md)), Capsule, NetworkPolicies, Kueue, EKS Pod Identity | Tenant isolation, authentication, RBAC, GPU fair-share, IAM without static keys |
+| **Tenancy & identity** | IAM Identity Center as the identity hub ([ADR-0015](adr/0015-iam-identity-center-identity-hub.md)), Capsule, NetworkPolicies, Kueue, EKS Pod Identity | Tenant isolation, authentication, RBAC, GPU fair-share, IAM without static keys |
 | **Workspaces** | Kubeflow Notebooks or Coder, curated CUDA/framework images | Self-service development environments |
 | **Jobs & pipelines** | **Argo Workflows + Hera**, golden-path ClusterWorkflowTemplates, CronWorkflows, Kubeflow Trainer / KubeRay for distributed training | Run Python ML code as jobs and pipelines |
-| **Tracking & registry** | One shared MLflow: RDS PostgreSQL backend store, S3 artifact store with a prefix per tenant, OIDC SSO, per-tenant permissions | Experiments, model versions, stage promotion |
+| **Tracking & registry** | One shared MLflow: RDS PostgreSQL backend store, S3 artifact store with a prefix per tenant, SSO through Identity Center, per-tenant permissions | Experiments, model versions, stage promotion |
 | **Serving** | KServe (vLLM, Triton, sklearn/xgboost runtimes), KEDA / Knative | Autoscaled inference endpoints, canary rollouts |
 | **CI/CD** | GitHub Actions → ECR, Argo CD, Argo Rollouts | Image builds, model promotion through GitOps |
 | **Portal** | Backstage | Templates, model & endpoint catalog, usage and cost views |
@@ -266,7 +266,7 @@ Users normally create these through Backstage. Advanced users can apply them dir
 MlQube serves one organization, and **each business unit (BU) is a tenant**. All tenants share the same clusters in a single tier.
 
 - **Tenant ID:** `<businessunit_name>-<businessunitid>`, e.g. `retail-1042`. The BU ID is numeric. Lowercase, at most 30 characters, and immutable once created.
-- **Used everywhere:** Capsule tenant, namespaces (`retail-1042-churn`), the `mlqube/tenant` label, Kueue queue, IdP groups, IAM role, S3 bucket, MLflow names and prefixes, and cost reports.
+- **Used everywhere:** Capsule tenant, namespaces (`retail-1042-churn`), the `mlqube/tenant` label, Kueue queue, Identity Center groups, IAM role, S3 bucket, MLflow names and prefixes, and cost reports.
 - **Isolation:** Capsule namespaces, quotas, Kueue fair-share, default-deny network policies, Kyverno, IAM per tenant, gVisor for CPU workloads and tenant-dedicated GPU nodes.
 - **Cost:** showback/chargeback per BU, based on the tenant label.
 

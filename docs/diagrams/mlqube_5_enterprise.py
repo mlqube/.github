@@ -28,7 +28,7 @@ from diagrams.onprem.logging import Loki
 from diagrams.onprem.mlops import Mlflow
 from diagrams.onprem.monitoring import Grafana, Prometheus
 from diagrams.onprem.vcs import Github
-from diagrams.saas.identity import Okta
+from diagrams.aws.security import SingleSignOn
 
 NAME = "mlqube_5_enterprise"
 
@@ -38,7 +38,7 @@ FLOWS = [
     (3, PURPLE, "bold", "Model promotion → GitOps PR in GitHub → Argo CD → KServe canary in prod"),
     (4, ORANGE, "bold", "GitOps: Argo CD (management) → both workload clusters"),
     (5, BROWN, "dashed", "Crossplane provisions per-tenant S3 bucket, IAM role, namespaces"),
-    (6, TEAL, "dashed", "SSO: corporate IdP (OIDC) → Backstage, Argo Workflows UI, MLflow"),
+    (6, TEAL, "dashed", "SSO: IAM Identity Center (SAML, via Dex) → Backstage, Argo Workflows UI, MLflow; groups per tenant"),
     (7, RED, "dotted", "Metrics/cost: all clusters → central observability → OpenCost → per-BU cost report"),
 ]
 
@@ -64,7 +64,7 @@ def build():
 
         # 2. corporate edge
         with lane("2 · Corporate edge & identity", "edge"):
-            idp = Okta("Corporate IdP\n(Entra ID / Okta)\nOIDC SSO · groups\nmlqube-<tenant>-admins\n/-developers/-viewers")
+            idp = SingleSignOn("IAM Identity Center\nSSO · groups\nmlqube-<tenant>-admins\n/-developers/-viewers")
             vpn = VPN("Corporate network / VPN\nprivate access to portals\n(internal ALB · Route 53)")
             with box("GitHub org"):
                 hera = Custom("Python code\n+ Hera SDK", icon("hera"))
@@ -166,9 +166,9 @@ def build():
         crossplane >> step(5, BROWN, "IAM role", style="dashed") >> iam
         crossplane >> step(5, BROWN, "tenant namespaces", style="dashed") >> np_capsule
 
-        idp >> step(6, TEAL, "OIDC", style="dashed") >> backstage
-        idp >> step(6, TEAL, "OIDC", style="dashed") >> argo_wf
-        idp >> step(6, TEAL, "OIDC", style="dashed") >> mlflow
+        idp >> step(6, TEAL, "SAML · Dex", style="dashed") >> backstage
+        idp >> step(6, TEAL, "SAML · Dex", style="dashed") >> argo_wf
+        idp >> step(6, TEAL, "SAML · Dex", style="dashed") >> mlflow
 
         staging >> step(7, RED, "metrics · logs", style="dotted", ltail=nonprod_c) >> otel
         cron >> step(7, RED, "metrics · logs", style="dotted", ltail=prod_c) >> otel
