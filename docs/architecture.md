@@ -14,7 +14,7 @@
 | Platform APIs | Crossplane | [0006](adr/0006-platform-apis-with-crossplane.md) | Accepted |
 | Tracking & registry | One shared MLflow (RDS PostgreSQL + S3), isolated by permissions and S3 prefixes | [0007](adr/0007-mlflow-multi-tenancy.md) | Accepted |
 | Untrusted code | gVisor for CPU workloads, tenant-dedicated GPU nodes | [0008](adr/0008-workload-sandboxing.md) | Accepted |
-| Identity | IAM Identity Center as the identity hub (fed by the corporate directory in an organization); tools through SAML (Dex where needed); `kubectl` through Identity Center roles and EKS access entries; groups per tenant; EKS Pod Identity for workloads | [0009](adr/0009-identity-provider.md), [0015](adr/0015-iam-identity-center-identity-hub.md) | Accepted |
+| Identity | IAM Identity Center as the identity hub; tools through SAML (Dex where needed); `kubectl` through Identity Center roles and EKS access entries; groups per tenant; EKS Pod Identity for workloads | [0009](adr/0009-identity-provider.md), [0015](adr/0015-iam-identity-center-identity-hub.md) | Accepted |
 | Ingress | Internal ALBs (AWS Load Balancer Controller), ACM, Route 53 private zone; KServe networking decided in Phase 5 | [0010](adr/0010-ingress.md) | Accepted |
 | Private access (reference build) | Tailscale subnet router in the mgmt VPC with split DNS; EKS API endpoint limited to the owner's IP | [0011](adr/0011-private-access-reference-build.md) | Accepted |
 | Pod networking | AWS VPC CNI with prefix delegation; it also enforces the default-deny network policies; Calico possible later in policy-only mode | [0013](adr/0013-cni-and-network-policy.md) | Accepted |
@@ -34,7 +34,7 @@ Business units (tenants) sign in through IAM Identity Center and push Python (He
 [![MlQube: identity, authentication and authorization](diagrams/mlqube_2_identity.png)](diagrams/mlqube_2_identity.svg)
 
 1. Users reach the portals over the corporate network / VPN, through a private ALB with TLS certificates from ACM.
-2. IAM Identity Center signs the user in (with MFA; in an organization through the corporate directory that feeds it) and sends a SAML assertion with the user's group IDs to **Dex** in the management cluster. Dex gives each tool (Backstage, MLflow, Grafana, Argo CD, Argo Workflows) an OIDC token carrying the groups: `mlqube-<tenant>-admins`, `-developers`, `-viewers`.
+2. IAM Identity Center signs the user in (with MFA) and sends a SAML assertion with the user's group IDs to **Dex** in the management cluster. Dex gives each tool (Backstage, MLflow, Grafana, Argo CD, Argo Workflows) an OIDC token carrying the groups: `mlqube-<tenant>-admins`, `-developers`, `-viewers`.
 3. Each tool maps those groups to roles in the user's own tenant only: Backstage ownership, MLflow permissions on the tenant's experiments and models, Grafana teams, Argo Workflows SSO RBAC.
 4. `kubectl`: an Identity Center permission set gives the user an IAM role; the EKS **access entry** for that role maps it to Kubernetes groups. Kubernetes RBAC and Capsule limit users to their tenant's namespaces.
 5. Kyverno and Capsule check every object at admission (tenant labels, quotas, allowed images).
