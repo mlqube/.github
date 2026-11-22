@@ -12,6 +12,7 @@ This is the special `.github` repository for the **MlQube** organization.
 | [Architecture](docs/architecture.md) | Platform layers, components and tenancy model |
 | [Roadmap](docs/roadmap.md) | Phased delivery plan and exit criteria |
 | [Phase 1 plan](docs/phase-1-plan.md) | Task checklist for the AWS foundation and the Kueue spike |
+| [Platform documentation](docs/platform/README.md) | How the platform is built, run and debugged: setup, secrets, troubleshooting, and one page per Terraform layer, module and GitOps add-on, with diagrams (docs for the `infrastructure` and `gitops` repositories) |
 | [ADRs](docs/adr/README.md) | Architecture decisions: AWS/EKS, cluster topology, Argo Workflows, tenancy and more |
 
 ## Architecture at a glance

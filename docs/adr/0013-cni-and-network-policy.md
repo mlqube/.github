@@ -30,7 +30,7 @@ Use **option 1**: the **AWS VPC CNI** in every EKS cluster.
 | Concern | Decision |
 |---|---|
 | **Installation** | The `vpc-cni` EKS managed add-on, version pinned, installed with the cluster by Terraform |
-| **Pod addresses** | From the cluster's private subnets ([network layer](https://github.com/mlqube/infrastructure/blob/main/live/platform/network/README.md)) |
+| **Pod addresses** | From the cluster's private subnets ([network layer](../platform/infrastructure/network.md)) |
 | **Pods per node** | **Prefix delegation** on (`ENABLE_PREFIX_DELEGATION=true`); node `maxPods` set to match, so nodes aren't limited by the number of network interfaces |
 | **Network policies** | Enforced by the VPC CNI's network policy agent (`enableNetworkPolicy: "true"`). Each tenant namespace gets a **default-deny** policy plus explicit allows (DNS, platform services), created by the `Tenant` API ([ADR-0006](0006-platform-apis-with-crossplane.md)) |
 | **Calico** | Not used now. It can be added later in **policy-only** mode (option 2) if MlQube needs cluster-wide policies, policy tiers or DNS-based rules, without changing pod addressing |
