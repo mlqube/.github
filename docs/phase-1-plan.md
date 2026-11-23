@@ -38,14 +38,14 @@
 - [x] Tagging scheme (`mlqube/*` default tags) and AWS Budgets alerts
 - [ ] KMS encryption for Kubernetes secrets: left out of the reference build (a customer-managed key costs about $1 per create/destroy cycle); EKS's default encryption applies
 - [x] IAM roles through EKS Pod Identity for Karpenter, the AWS Load Balancer Controller and ExternalDNS, one set per cluster ([addons-mgmt](platform/infrastructure/addons-mgmt.md))
-- [ ] Pod Identity role for External Secrets
+- [x] Pod Identity role for External Secrets (read-only, `mlqube/platform/*`)
 
 ## 3. GitOps bootstrap
 
 - [x] Terraform installs Argo CD in `mgmt` from CI through Tailscale ([ADR-0014](adr/0014-ci-access-to-private-clusters.md)), at `https://argocd.mlqube.click` (internal ALB)
 - [ ] After that, Argo CD manages itself (today Terraform also upgrades it)
 - [x] App of apps with one ApplicationSet per add-on; `wl-nonprod` registered as a spoke (hub and spoke, [clusters/mgmt](platform/gitops/clusters-mgmt.md))
-- [x] Argo CD projects: `bootstrap` (root app), `platform` (add-ons), `default` locked down (merged; to verify at the next build)
+- [x] Argo CD projects: `bootstrap` (root app), `platform` (add-ons), `default` locked down; verified 2026-11-23 (an Application in `default` is refused)
 - [ ] Sync waves for ordering ([#13](https://github.com/mlqube/.github/issues/13))
 - [x] Pinned chart versions
 - [ ] Changes roll out to non-prod first
@@ -55,18 +55,19 @@
 - [x] AWS VPC CNI managed add-on with prefix delegation and network policy enforcement on ([ADR-0013](adr/0013-cni-and-network-policy.md))
 - [ ] A default-deny policy verified between two test namespaces
 - [x] Karpenter with a CPU NodePool per cluster (spot first)
-- [ ] Karpenter scale test on both clusters; GPU (spot) NodePool in `wl-nonprod`, tainted so only GPU work lands on it
+- [x] Karpenter scale test on both clusters, 2026-11-23: a 3-CPU pod got a spot node in about 40 s (mgmt `c8id.xlarge`, wl-nonprod `c8i-flex.xlarge`), removed about 2 min after the pod was deleted
+- [ ] GPU (spot) NodePool in `wl-nonprod`, tainted so only GPU work lands on it
 - [ ] NVIDIA GPU Operator (or device plugin) and the DCGM exporter for GPU metrics
 - [x] AWS Load Balancer Controller, ExternalDNS
-- [ ] cert-manager (in-cluster certificates only)
-- [ ] External Secrets Operator connected to AWS Secrets Manager
+- [x] cert-manager (in-cluster certificates only), internal CA `mlqube-internal-ca` per cluster; verified 2026-11-23 (test certificate issued)
+- [x] External Secrets Operator connected to AWS Secrets Manager; verified 2026-11-23 (test secret synced; another path denied by IAM; tenant-labelled namespace denied by the store)
 - [ ] Kyverno baseline policies (no privileged pods, required labels); metrics-server
 
 ## 5. Identity ([ADR-0009](adr/0009-identity-provider.md))
 
 Mechanism changed by [ADR-0015](adr/0015-iam-identity-center-identity-hub.md): IAM Identity Center, SAML through Dex, access entries instead of an EKS OIDC provider.
 
-- [x] Argo CD sign-in through Identity Center (SAML app, Dex); `mlqube-platform-admins` → `role:admin`, everyone else no access; local admin off (merged; to verify at the next build)
+- [x] Argo CD sign-in through Identity Center (SAML app, Dex); `mlqube-platform-admins` → `role:admin`, everyone else no access; local admin off (`admin.enabled: false` verified 2026-11-23)
 - [x] Group claim format checked: Identity Center sends group **IDs**; the ID is kept in SSM Parameter Store
 - [ ] Grafana sign-in the same way (with observability)
 - [x] `kubectl` through Identity Center roles and EKS access entries; CI and Argo CD through their own access entries
