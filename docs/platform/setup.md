@@ -162,14 +162,16 @@ Remove-Item argocd-gitops, argocd-gitops.pub
 
 ## 10b. Argo CD single sign-on (IAM Identity Center)
 
-Argo CD signs people in through **IAM Identity Center** (SAML), via Dex, the identity broker bundled with Argo CD. Free; nothing secret to store.
+Argo CD (and later every other tool) signs people in through **IAM Identity Center** (SAML), via **Dex**, the standalone identity broker in mgmt ([Dex](gitops/dex.md)). Free; nothing secret to store.
 
 1. IAM Identity Center console (us-west-2) → **Applications → Customer managed → Add application** → *I have an application I want to set up* → **SAML 2.0** → Next.
 2. **Display name** `Argo CD (MlQube)`. Under **IAM Identity Center metadata**: copy the **IAM Identity Center sign-in URL**, and **download the IAM Identity Center certificate** (a `.pem` file).
 3. **Application properties → Application start URL** (optional): `https://argocd.mlqube.click`.
 4. **Application metadata → Manually type your metadata values**:
-   - **Application ACS URL:** `https://argocd.mlqube.click/api/dex/callback`
-   - **Application SAML audience:** `https://argocd.mlqube.click/api/dex/callback`
+   - **Application ACS URL:** `https://dex.mlqube.click/callback`
+   - **Application SAML audience:** `https://dex.mlqube.click/callback`
+
+   (Before Dex became a standalone add-on, both were `https://argocd.mlqube.click/api/dex/callback`. An existing application only needs these two fields changed: **Actions → Edit configuration**.)
 5. **Submit**, then **Actions → Edit attribute mappings**:
 
 | User attribute in the application | Maps to | Format |

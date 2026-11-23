@@ -9,6 +9,8 @@ How the MlQube platform is built, run and debugged: every operational document f
 
 Account-specific identifiers are written as placeholders: `<account-id>` (AWS account), `<org-id>` and `<repo-id>` (GitHub's immutable IDs for the organization and the `infrastructure` repository). Look them up with `aws sts get-caller-identity --query Account`, `gh api orgs/mlqube -q .id` and `gh api repos/mlqube/infrastructure -q .id`. No secret values are stored in any document: only where each secret lives.
 
+**What runs in the clusters**, with each component's status and doc page: see the [overview on the front page](../../README.md#what-runs-in-the-clusters).
+
 ## Start here
 
 | Document | Read it when |
@@ -39,6 +41,7 @@ Account-specific identifiers are written as placeholders: `<account-id>` (AWS ac
 | [`clusters/mgmt`](gitops/clusters-mgmt.md) | What the hub Argo CD manages: ApplicationSets, which clusters and their values, conventions | [`clusters/mgmt/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt) |
 | [AWS Load Balancer Controller](gitops/aws-load-balancer-controller.md) | Ingress → internal ALB, with the ingress flow diagram | [`clusters/mgmt/aws-load-balancer-controller/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/aws-load-balancer-controller) |
 | [ExternalDNS](gitops/external-dns.md) | Private DNS records, with the DNS lookup diagram | [`clusters/mgmt/external-dns/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/external-dns) |
+| [Dex](gitops/dex.md) | Identity broker: IAM Identity Center (SAML) → every tool (OIDC); adding a tool; if Dex is down | [`clusters/mgmt/dex/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/dex) |
 | [cert-manager](gitops/cert-manager.md) | TLS certificates inside the clusters; the internal CA | [`clusters/mgmt/cert-manager/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/cert-manager) |
 | [Kyverno](gitops/kyverno.md) | Policy engine; Pod Security baseline policies in Audit mode; moving to Enforce | [`clusters/mgmt/kyverno/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/kyverno) |
 | [metrics-server](gitops/metrics-server.md) | CPU and memory use for `kubectl top` and autoscaling | [`clusters/mgmt/metrics-server/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/metrics-server) |
@@ -55,5 +58,6 @@ All pictures are in [`images/`](images/) and generated from Python scripts in [`
 | `tailscale-access.png` | `python docs/diagrams/platform/access_diagram.py` | [tailscale-router](infrastructure/module-tailscale-router.md) |
 | `app-of-apps.png` | `python docs/diagrams/platform/app_of_apps.py` | [GitOps overview](gitops/README.md) |
 | `karpenter-flow.png`, `ingress-flow.png`, `dns-lookup.png` | `python docs/diagrams/platform/addon_diagrams.py` | [Karpenter](gitops/karpenter.md), [load balancer controller](gitops/aws-load-balancer-controller.md), [ExternalDNS](gitops/external-dns.md) |
+| `sso-flow.png` | `python docs/diagrams/platform/sso_diagram.py` | [Dex](gitops/dex.md) |
 
 The architecture views (1–6) are in [`docs/diagrams/`](../diagrams/) and described in [architecture.md](../architecture.md).

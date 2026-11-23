@@ -28,7 +28,7 @@ Constraint found on the way: Identity Center offers **SAML 2.0**, not OIDC, for 
 | Concern | ADR-0009 | Now |
 |---|---|---|
 | **Source of people and groups** | The corporate IdP | **IAM Identity Center**. In an organization, an external directory can feed it through SAML federation and SCIM; MFA and conditional access stay with the directory |
-| **Tools** (Argo CD, Backstage, Grafana, MLflow, Argo Workflows) | OIDC clients of the IdP | **SAML applications in Identity Center**, through **Dex** in the management cluster where a tool speaks only OIDC (Argo CD today: [docs/platform/infrastructure/addons-mgmt.md](../platform/infrastructure/addons-mgmt.md#single-sign-on-ssotf)). Only people assigned to an application can sign in at all |
+| **Tools** (Argo CD, Backstage, Grafana, MLflow, Argo Workflows) | OIDC clients of the IdP | **SAML applications in Identity Center**, through **Dex**, a standalone add-on in the management cluster ([Dex](../platform/gitops/dex.md)), where a tool speaks only OIDC (Argo CD today: [docs/platform/infrastructure/addons-mgmt.md](../platform/infrastructure/addons-mgmt.md#single-sign-on-ssotf)). Only people assigned to an application can sign in at all |
 | **Groups in tokens** | Group names (or IDs, depending on the IdP) | **Group IDs** (Identity Center sends IDs). RBAC rules map IDs; the ID of each group is kept next to its name (SSM parameter today) |
 | **`kubectl`** | EKS associated with the IdP as an OIDC identity provider | Identity Center **permission set → IAM role → EKS access entry** (no EKS OIDC provider). Tenant scoping through access entry Kubernetes groups, RBAC and Capsule |
 | **Workloads** | EKS Pod Identity, per-tenant IAM role | Unchanged |
