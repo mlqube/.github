@@ -56,14 +56,15 @@
 - [ ] A default-deny policy verified between two test namespaces
 - [x] Karpenter with a CPU NodePool per cluster (spot first)
 - [x] Karpenter scale test on both clusters, 2026-11-23: a 3-CPU pod got a spot node in about 40 s (mgmt `c8id.xlarge`, wl-nonprod `c8i-flex.xlarge`), removed about 2 min after the pod was deleted
-- [ ] GPU (spot) NodePool in `wl-nonprod`, tainted so only GPU work lands on it
-- [ ] NVIDIA GPU Operator (or device plugin) and the DCGM exporter for GPU metrics
+- [ ] GPU (spot) NodePool in `wl-nonprod`, tainted so only GPU work lands on it (written, g6/g5 within the quotas; to verify at the next build)
+- [ ] NVIDIA device plugin (written; to verify at the next build)
+- [ ] DCGM exporter for GPU metrics (with observability)
 - [x] AWS Load Balancer Controller, ExternalDNS
 - [x] cert-manager (in-cluster certificates only), internal CA `mlqube-internal-ca` per cluster; verified 2026-11-23 (test certificate issued)
 - [x] External Secrets Operator connected to AWS Secrets Manager; verified 2026-11-23 (test secret synced; another path denied by IAM; tenant-labelled namespace denied by the store)
 - [ ] Kyverno with the Pod Security baseline policies in Audit mode (written, mlqube/gitops#11; to verify at the next build); Enforce once the reports are clean
 - [ ] Required-labels policy (with the tenant label convention, Phase 2)
-- [ ] metrics-server
+- [ ] metrics-server (written; to verify at the next build)
 
 ## 5. Identity ([ADR-0009](adr/0009-identity-provider.md))
 

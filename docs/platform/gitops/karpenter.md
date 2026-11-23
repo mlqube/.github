@@ -45,17 +45,52 @@ Each cluster Argo CD manages runs its **own** Karpenter (one Application per clu
 |---|---|
 | [`applicationset.yaml`](https://github.com/mlqube/gitops/blob/main/clusters/mgmt/karpenter/applicationset.yaml) | ApplicationSet: one Karpenter per cluster (`<cluster>-karpenter`), chart 1.14.3 from `public.ecr.aws/karpenter`, `clusterName: <cluster>`, `interruptionQueue: karpenter-<cluster>`, 1 replica |
 | [`nodepools-applicationset.yaml`](https://github.com/mlqube/gitops/blob/main/clusters/mgmt/karpenter/nodepools-applicationset.yaml) | ApplicationSet: `<cluster>-karpenter-nodepools` from [`platform/karpenter/<cluster>`](https://github.com/mlqube/gitops/tree/main/platform/karpenter); retries until Karpenter's CRDs exist |
-| [`../../../platform/karpenter/wl-nonprod/`](https://github.com/mlqube/gitops/tree/main/platform/karpenter/wl-nonprod) | wl-nonprod's `EC2NodeClass default` (node role `karpenter-node-wl-nonprod`, subnets tagged `mlqube-nonprod`, security group tagged `wl-nonprod`) and `NodePool general` (CPU, spot first, **max 32 vCPUs**). GPU NodePool once the GPU instance quota is confirmed |
+| [`../../../platform/karpenter/wl-nonprod/`](https://github.com/mlqube/gitops/tree/main/platform/karpenter/wl-nonprod) | wl-nonprod's `EC2NodeClass default` (node role `karpenter-node-wl-nonprod`, subnets tagged `mlqube-nonprod`, security group tagged `wl-nonprod`) and `NodePool general` (CPU, spot first, **max 32 vCPUs**); `EC2NodeClass gpu` and `NodePool gpu` (see [GPU nodes](#gpu-nodes-wl-nonprod)) |
 | [`oci-repository.yaml`](https://github.com/mlqube/gitops/blob/main/clusters/mgmt/karpenter/oci-repository.yaml) | Tells Argo CD the chart is in a public OCI registry (no credentials) |
 | [`../../../platform/karpenter/mgmt/nodepool.yaml`](https://github.com/mlqube/gitops/blob/main/platform/karpenter/mgmt/nodepool.yaml) | `NodePool general`: c/m/r families, generation 6+, amd64, spot then on-demand, **max 16 vCPUs**, consolidate after 1 minute, replace after 7 days |
 | [`../../../platform/karpenter/mgmt/ec2nodeclass.yaml`](https://github.com/mlqube/gitops/blob/main/platform/karpenter/mgmt/ec2nodeclass.yaml) | `EC2NodeClass default`: AL2023, node role, subnets tagged `karpenter.sh/discovery: mlqube-mgmt`, security group tagged `karpenter.sh/discovery: mgmt`, IMDSv2, 30 GiB encrypted gp3 |
+
+## GPU nodes (wl-nonprod)
+
+ML jobs that need a GPU get one from a separate NodePool, **`gpu`**, in `wl-nonprod` only ([`nodepool-gpu.yaml`](https://github.com/mlqube/gitops/blob/main/platform/karpenter/wl-nonprod/nodepool-gpu.yaml), [`ec2nodeclass-gpu.yaml`](https://github.com/mlqube/gitops/blob/main/platform/karpenter/wl-nonprod/ec2nodeclass-gpu.yaml)).
+
+| Setting | Value | Why |
+|---|---|---|
+| Instance types | **g6** (NVIDIA L4) and **g5** (NVIDIA A10G), sizes `xlarge` and `2xlarge` (4 and 8 vCPUs, one GPU each) | Within the account's GPU quotas in us-west-2: **Spot G and VT 8 vCPUs**, **On-Demand G and VT 4 vCPUs** |
+| Capacity | Spot first, on-demand as a fallback | Spot costs much less; the on-demand quota only fits one `xlarge` |
+| Taint | `nvidia.com/gpu=true:NoSchedule` | Only pods that tolerate it land there, so ordinary pods never keep an expensive GPU node busy |
+| Limits | 8 vCPUs and 2 GPUs in total | Caps the cost, and matches the spot quota |
+| Disk | 100 GiB (`EC2NodeClass gpu`) | CUDA and framework images are often 10–20 GB |
+| Scale to zero | Empty nodes removed after 1 minute | A GPU node exists only while a GPU pod runs |
+| Node image | Amazon Linux 2023 (`al2023@latest`) | For GPU instance types Karpenter picks the **NVIDIA** variant of the AMI, which already has the NVIDIA driver and container toolkit |
+
+The **NVIDIA device plugin** ([`clusters/mgmt/nvidia-device-plugin/`](https://github.com/mlqube/gitops/blob/main/clusters/mgmt/nvidia-device-plugin/applicationset.yaml), chart 0.20.1, `kube-system`) runs on every GPU node and tells the kubelet how many GPUs it has, so pods can ask for them. It is deployed to every cluster but runs only on nodes Karpenter labels `karpenter.k8s.aws/instance-gpu-manufacturer=nvidia`, so in mgmt it runs nowhere. It lives in `kube-system` because it mounts a directory of the node, which Kyverno's baseline policies flag everywhere else.
+
+A GPU pod asks for the GPU **and** tolerates the taint (EKS doesn't add the toleration automatically):
+
+```yaml
+spec:
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  containers:
+    - name: train
+      image: nvidia/cuda:12.4.1-base-ubuntu22.04
+      command: ["nvidia-smi"]
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+```
+
+The workflow templates (Argo Workflows, golden path) will add both for you.
 
 ## Cost and safety
 
 - Nothing extra while nothing is pending: Karpenter only starts a node for pods that don't fit on the system nodes.
 - The `NodePool` limit (16 vCPUs) caps how much it can ever start.
 - On `platform` destroy, the `addons-mgmt` job deletes the NodePools first and waits until Karpenter has terminated its nodes, so no instance is left behind to block the network destroy.
-- GPU NodePools belong to the workload cluster (`wl-nonprod`), not mgmt.
+- GPU nodes exist only in the workload cluster (`wl-nonprod`), not mgmt, and only while a GPU pod runs.
 
 ## Checking it
 
@@ -64,7 +99,7 @@ kubectl --context mgmt get nodepools,ec2nodeclasses,nodeclaims
 ```
 
 ```bash
-kubectl --context mgmt -n karpenter logs deploy/karpenter --tail=50
+kubectl --context mgmt -n karpenter logs -l app.kubernetes.io/name=karpenter --tail=50
 ```
 
 The picture is generated by [`docs/diagrams/platform/addon_diagrams.py`](../../diagrams/platform/addon_diagrams.py).
