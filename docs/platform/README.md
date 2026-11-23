@@ -56,5 +56,6 @@ All pictures are in [`images/`](images/) and generated from Python scripts in [`
 | `tailscale-access.png` | `python docs/diagrams/platform/access_diagram.py` | [tailscale-router](infrastructure/module-tailscale-router.md) |
 | `app-of-apps.png` | `python docs/diagrams/platform/app_of_apps.py` | [GitOps overview](gitops/README.md) |
 | `karpenter-flow.png`, `ingress-flow.png`, `dns-lookup.png` | `python docs/diagrams/platform/addon_diagrams.py` | [Karpenter](gitops/karpenter.md), [load balancer controller](gitops/aws-load-balancer-controller.md), [ExternalDNS](gitops/external-dns.md) |
+| `sso-flow.png` | `python docs/diagrams/platform/sso_diagram.py` | [Dex](gitops/dex.md) |
 
 The architecture views (1–6) are in [`docs/diagrams/`](../diagrams/) and described in [architecture.md](../architecture.md).
