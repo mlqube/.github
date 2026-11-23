@@ -62,11 +62,12 @@ What is planned:
 
 | View | Shows |
 |---|---|
-| [1. High-level architecture](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_1_overview.png) | The building blocks and how they relate |
-| [2. Identity](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_2_identity.png) | How people are authenticated and authorized, and how workloads get cloud access |
-| [3. Management cluster and shared services](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_3_management.png) | What runs in the management cluster and how it uses shared AWS services |
-| [4. Training, testing and serving](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_4_ml_lifecycle.png) | One model's path from Python code to a canary in prod |
-| [5. Full view](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_5_enterprise.png) | All parts joined together |
+| [1. High-level architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md#1-high-level-architecture) | The building blocks and how they relate |
+| [2. Identity](https://github.com/mlqube/.github/blob/main/docs/architecture.md#2-identity-authentication-and-authorization) | How people are authenticated and authorized, and how workloads get cloud access |
+| [3. Management cluster and shared services](https://github.com/mlqube/.github/blob/main/docs/architecture.md#3-management-cluster-and-shared-services) | What runs in the management cluster and how it uses shared AWS services |
+| [4. Training, testing and serving](https://github.com/mlqube/.github/blob/main/docs/architecture.md#4-training-testing-and-serving) | One model's path from Python code to a canary in prod |
+| [5. Full view](https://github.com/mlqube/.github/blob/main/docs/architecture.md#5-full-view) | All parts joined together |
+| [6. GitOps hub and spoke](https://github.com/mlqube/.github/blob/main/docs/architecture.md#6-gitops-hub-and-spoke) | One Argo CD in the management cluster deploys to every cluster; workload clusters run no Argo CD |
 
 ## Built on open source
 

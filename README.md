@@ -38,12 +38,12 @@ MlQube is an internal developer platform for ML/AI on Kubernetes, used by one or
 
 | View | Shows |
 |---|---|
-| [1. High-level architecture](docs/diagrams/mlqube_1_overview.png) | The building blocks and how they relate |
-| [2. Identity](docs/diagrams/mlqube_2_identity.png) | How people are authenticated and authorized, and how workloads get cloud access |
-| [3. Management cluster and shared services](docs/diagrams/mlqube_3_management.png) | What runs in the management cluster and how it uses the shared AWS services |
-| [4. Training, testing and serving](docs/diagrams/mlqube_4_ml_lifecycle.png) | One model's path from Python code to a canary in prod |
-| [5. Full view](docs/diagrams/mlqube_5_enterprise.png) | All parts joined together |
-| [6. GitOps hub and spoke](docs/diagrams/mlqube_6_gitops_hub.png) | One Argo CD in the management cluster deploys to every cluster; workload clusters run no Argo CD |
+| [1. High-level architecture](docs/architecture.md#1-high-level-architecture) | The building blocks and how they relate |
+| [2. Identity](docs/architecture.md#2-identity-authentication-and-authorization) | How people are authenticated and authorized, and how workloads get cloud access |
+| [3. Management cluster and shared services](docs/architecture.md#3-management-cluster-and-shared-services) | What runs in the management cluster and how it uses the shared AWS services |
+| [4. Training, testing and serving](docs/architecture.md#4-training-testing-and-serving) | One model's path from Python code to a canary in prod |
+| [5. Full view](docs/architecture.md#5-full-view) | All parts joined together |
+| [6. GitOps hub and spoke](docs/architecture.md#6-gitops-hub-and-spoke) | One Argo CD in the management cluster deploys to every cluster; workload clusters run no Argo CD |
 
 ## GitOps: hub and spoke
 
