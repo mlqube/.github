@@ -6,7 +6,7 @@ Installs **Argo CD** in the `mgmt` cluster, gives it read-only access to the [`g
 
 | Part | Setting |
 |---|---|
-| Argo CD | Helm chart `argo-cd` 10.14.0 (Argo CD v3.6.1), namespace `argocd`; single sign-on (Dex) and notifications off for now |
+| Argo CD | Helm chart `argo-cd` 10.14.0 (Argo CD v3.6.1), namespace `argocd`; single sign-on through the standalone Dex (OIDC; its bundled Dex is off); notifications off for now |
 | GitOps repository | `git@github.com:mlqube/gitops.git`, branch `main`, through a **read-only deploy key** read from SSM Parameter Store `/mlqube/argocd/gitops-deploy-key` |
 | Root Application | `root`: applies every manifest under `clusters/mgmt` (automated sync, prune, self-heal). It is in its own Argo CD project, **`bootstrap`**, created by the same Helm release: only the gitops repository, only mgmt's `argocd` namespace, only ApplicationSets, AppProjects and repository Secrets. The add-ons' `platform` project and the locked-down `default` are in gitops ([projects](../gitops/clusters-mgmt.md#argo-cd-projects-what-each-application-may-do)) |
 | Cluster access | The API is private, so the workflow job **joins the tailnet** as a temporary `tag:ci` device and reaches the API through the Tailscale router ([ADR-0014](../../adr/0014-ci-access-to-private-clusters.md)) |
@@ -88,7 +88,7 @@ With Tailscale on, open **`https://argocd.mlqube.click`** → **Log in via AWS I
 | Part | Setting |
 |---|---|
 | Identity provider | **AWS IAM Identity Center**, a customer-managed **SAML 2.0** application `Argo CD (MlQube)` (setup: [docs/setup.md step 10b](../setup.md#10b-argo-cd-single-sign-on-iam-identity-center)) |
-| Broker | **Dex**, bundled with Argo CD (Identity Center has no OIDC for custom apps). Callback / SAML audience `https://argocd.mlqube.click/api/dex/callback` |
+| Broker | **Dex**, a standalone add-on in mgmt at `https://dex.mlqube.click` (Identity Center has no OIDC for custom apps). Argo CD is its OIDC client `argo-cd`; the client secret is random per build (Secret `argocd/argocd-dex-client`). This layer writes Dex's configuration (Secret `dex/dex-config`) and namespace; Argo CD deploys Dex from gitops ([Dex](../gitops/dex.md)). Callback / SAML audience `https://dex.mlqube.click/callback` |
 | SAML metadata | Sign-in URL and certificate from SSM String parameters `/mlqube/argocd/sso-url`, `/mlqube/argocd/sso-ca` (public metadata, not secrets) |
 | Who gets in | Only people **assigned** to the application in Identity Center |
 | What they may do | `mlqube-platform-admins` → **`role:admin`** (its Identity Center group ID, from SSM `/mlqube/argocd/sso-admin-group-id`: Identity Center sends IDs, not names). Anyone else → **no access** (`policy.default` empty). Tenant groups come in Phase 2 |
