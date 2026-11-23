@@ -4,7 +4,9 @@
 
 MlQube lets ML engineers and data scientists **build, train, register and serve models** themselves, with no need to become Kubernetes experts. It is built from proven open-source projects and adds a thin layer for multi-tenancy, golden paths and cost visibility.
 
-> **Status:** 🧭 Planning. We are designing the architecture in the open. Nothing here is ready for production yet.
+**[Why](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md)** · **[Vision](https://github.com/mlqube/.github/blob/main/docs/vision.md)** · **[Architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md)** · **[Roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md)** · **[Decisions (ADRs)](https://github.com/mlqube/.github/blob/main/docs/adr/README.md)** · **[Platform docs](https://github.com/mlqube/.github/blob/main/docs/platform/README.md)** · **[What runs today](https://github.com/mlqube/.github/blob/main/README.md#what-runs-in-the-clusters)**
+
+> **Status:** 🏗️ **Phase 1, the AWS foundation, is being built**, in the open. The reference platform (two EKS clusters, the GitOps hub and the base add-ons) is created from code for each test session and destroyed afterwards. Not ready for production. Progress: [Phase 1 plan](https://github.com/mlqube/.github/blob/main/docs/phase-1-plan.md) · [what runs in the clusters](https://github.com/mlqube/.github/blob/main/README.md#what-runs-in-the-clusters).
 
 ---
 
@@ -48,7 +50,7 @@ flowchart LR
 
 [![MlQube: high-level architecture](https://raw.githubusercontent.com/mlqube/.github/main/docs/diagrams/mlqube_1_overview.png)](https://github.com/mlqube/.github/blob/main/docs/architecture.md#enterprise-view)
 
-📐 **Main architecture diagram:** [full enterprise view](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_5_enterprise.png) · [SVG](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_5_enterprise.svg). The [architecture document](https://github.com/mlqube/.github/blob/main/docs/architecture.md#enterprise-view) walks through all five views step by step.
+📐 **Main architecture diagram:** [full view, explained](https://github.com/mlqube/.github/blob/main/docs/architecture.md#5-full-view) · [SVG to zoom](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_5_enterprise.svg). The [architecture document](https://github.com/mlqube/.github/blob/main/docs/architecture.md#enterprise-view) walks through all six views step by step.
 
 What is planned:
 
@@ -71,25 +73,31 @@ What is planned:
 
 ## Built on open source
 
+✅ = in the reference build today, linked to its page; the rest is planned ([roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md)).
+
 | Area | Projects |
 |---|---|
-| Cloud & infrastructure | AWS: Amazon EKS, S3, ECR, RDS (first) · Terraform |
+| Cloud & infrastructure | AWS: ✅ [Amazon EKS](https://github.com/mlqube/.github/blob/main/docs/platform/infrastructure/eks-mgmt.md), S3, ECR, RDS (first) · ✅ [Terraform](https://github.com/mlqube/.github/blob/main/docs/platform/infrastructure/README.md) |
+| Cloud & networking | ✅ [AWS Load Balancer Controller](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/aws-load-balancer-controller.md) (internal ALBs), ✅ [ExternalDNS](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/external-dns.md) (private DNS) |
 | Portal | Backstage |
-| GitOps & platform APIs | Argo CD, Crossplane |
-| Scheduling & quotas | Kueue, GPU Operator, Karpenter |
+| GitOps & platform APIs | ✅ [Argo CD](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/README.md) (hub and spoke), Crossplane |
+| Scheduling & quotas | ✅ [Karpenter](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/karpenter.md) (CPU and GPU nodes), ✅ [NVIDIA device plugin](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/karpenter.md#gpu-nodes-wl-nonprod), Kueue |
 | ML jobs & pipelines | Argo Workflows + Hera (Python SDK) |
 | Distributed training | Kubeflow Trainer, KubeRay |
 | Tracking & registry | MLflow |
 | Serving | KServe, vLLM, KEDA |
-| Identity, tenancy & policy | AWS IAM Identity Center (SSO through Dex), Capsule, Kyverno, External Secrets, gVisor |
-| Observability & cost | Prometheus, Grafana, OpenTelemetry, OpenCost |
+| Identity, tenancy & policy | ✅ AWS IAM Identity Center (SSO through [Dex](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/dex.md)), ✅ [Kyverno](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/kyverno.md), ✅ [External Secrets](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/external-secrets.md), ✅ [cert-manager](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/cert-manager.md), Capsule, gVisor |
+| Observability & cost | ✅ [metrics-server](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/metrics-server.md), Prometheus, Grafana, OpenTelemetry, OpenCost |
 
-## Learn more
+## Documentation map
 
-- 💡 [Why an organization needs an ML platform](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md)
-- 📖 [Vision](https://github.com/mlqube/.github/blob/main/docs/vision.md)
-- 🏗️ [Architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md)
-- 🗺️ [Roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md)
-- 📝 [Architecture decision records](https://github.com/mlqube/.github/tree/main/docs/adr)
+| To ... | Read |
+|---|---|
+| **Understand why** | 💡 [Why an organization needs an ML platform](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md) · 📖 [Vision](https://github.com/mlqube/.github/blob/main/docs/vision.md) |
+| **See the design** | 🏗️ [Architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md) (six views, explained) · 📝 [Architecture decision records](https://github.com/mlqube/.github/blob/main/docs/adr/README.md) |
+| **Follow the plan** | 🗺️ [Roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md) · ✅ [Phase 1 plan](https://github.com/mlqube/.github/blob/main/docs/phase-1-plan.md) (what's done, what's next) |
+| **See what runs today** | 🧩 [What runs in the clusters](https://github.com/mlqube/.github/blob/main/README.md#what-runs-in-the-clusters): every component, its cluster, its status and its page |
+| **Build and run it** | 🛠️ [Platform documentation](https://github.com/mlqube/.github/blob/main/docs/platform/README.md): [setup](https://github.com/mlqube/.github/blob/main/docs/platform/setup.md), [secrets](https://github.com/mlqube/.github/blob/main/docs/platform/secrets.md), [troubleshooting](https://github.com/mlqube/.github/blob/main/docs/platform/troubleshooting.md), and one page per Terraform layer and GitOps add-on |
+| **Sign in** | 🔐 [Single sign-on through Dex](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/dex.md) (with the sign-in flow diagram) |
 
 Ideas and feedback are welcome. Please open an issue in this repository.
