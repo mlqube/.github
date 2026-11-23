@@ -9,6 +9,8 @@ How the MlQube platform is built, run and debugged: every operational document f
 
 Account-specific identifiers are written as placeholders: `<account-id>` (AWS account), `<org-id>` and `<repo-id>` (GitHub's immutable IDs for the organization and the `infrastructure` repository). Look them up with `aws sts get-caller-identity --query Account`, `gh api orgs/mlqube -q .id` and `gh api repos/mlqube/infrastructure -q .id`. No secret values are stored in any document: only where each secret lives.
 
+**What runs in the clusters**, with each component's status and doc page: see the [overview on the front page](../../README.md#what-runs-in-the-clusters).
+
 ## Start here
 
 | Document | Read it when |
