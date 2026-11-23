@@ -61,7 +61,9 @@
 - [x] AWS Load Balancer Controller, ExternalDNS
 - [x] cert-manager (in-cluster certificates only), internal CA `mlqube-internal-ca` per cluster; verified 2026-11-23 (test certificate issued)
 - [x] External Secrets Operator connected to AWS Secrets Manager; verified 2026-11-23 (test secret synced; another path denied by IAM; tenant-labelled namespace denied by the store)
-- [ ] Kyverno baseline policies (no privileged pods, required labels); metrics-server
+- [ ] Kyverno with the Pod Security baseline policies in Audit mode (written, mlqube/gitops#11; to verify at the next build); Enforce once the reports are clean
+- [ ] Required-labels policy (with the tenant label convention, Phase 2)
+- [ ] metrics-server
 
 ## 5. Identity ([ADR-0009](adr/0009-identity-provider.md))
 
