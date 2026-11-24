@@ -17,6 +17,7 @@ Ground rules:
 | **Tailscale router auth key** | Reusable, ephemeral, pre-approved auth key, tag `tag:mlqube-router` | SSM `/mlqube/tailscale/router-authkey` (SecureString, `alias/aws/ssm`) | The router instance at boot, through its IAM role (may read only this parameter). Never in Terraform state | You, [setup step 8](setup.md#8-router-auth-key) | **≤ 90 days** after creation |
 | **`gitops` deploy key** (private half) | SSH key, ed25519 | SSM `/mlqube/argocd/gitops-deploy-key` (SecureString) | Terraform `addons-mgmt` → Kubernetes Secret `argocd/repo-gitops` → Argo CD repo server. **Also stored in the `addons-mgmt` Terraform state** (encrypted, private, versioned bucket) | You, [setup step 10](setup.md#10-argo-cd-deploy-key) | No expiry |
 | **`gitops` deploy key** (public half) | Read-only deploy key `argocd-mgmt` | GitHub: `mlqube/gitops` → Settings → Deploy keys | GitHub, to authorize Argo CD's reads | You, setup step 10 | No expiry |
+| **GitHub App `mlqube-argocd` private key** | RSA key (PEM) of the App; reads contents and metadata of every `mlqube` repository | SSM `/mlqube/argocd/github-app-private-key` (SecureString); App ID and installation ID in `/mlqube/argocd/github-app-id` and `/mlqube/argocd/github-app-installation-id` (String, not secret) | Terraform `addons-mgmt` → Kubernetes Secret `argocd/repo-creds-mlqube` → Argo CD (repositories `xrd-tenancy` and `tenant-*`, the tenants ApplicationSets' repository scan). **Also stored in the `addons-mgmt` Terraform state** | You, [setup step 10c](setup.md#10c-argo-cd-github-app) | No expiry |
 | **`TAILSCALE_CLIENT_ID`** | Client ID of the Tailscale trust credential | GitHub secret of `mlqube/infrastructure` | `terraform-layer.yml` → `tailscale/github-action` | You, [setup step 9](setup.md#9-ci-access-to-the-tailnet) | No expiry |
 | **`TAILSCALE_CLAIM`** | **Audience** of the Tailscale trust credential | GitHub secret of `mlqube/infrastructure` | Same | You, setup step 9 | No expiry |
 | **Argo CD SSO metadata** (not secret) | Identity Center sign-in URL and SAML certificate of the `Argo CD (MlQube)` application | SSM `/mlqube/argocd/sso-url`, `/mlqube/argocd/sso-ca`, `/mlqube/argocd/sso-admin-group-id` (String) | Terraform `addons-mgmt` → Dex's SAML connector | You, [setup step 10b](setup.md#10b-argo-cd-single-sign-on-iam-identity-center) | The certificate expires (Identity Center shows the date); replace both values when Identity Center rotates it |
@@ -60,6 +61,7 @@ The immutable subject (`mlqube@<org-id>/…@<repo-id>`) means a deleted and re-c
 | **Domain `mlqube.click`** | **2027-11-19** (auto-renew off) | Domain lapses; certificate renewal and every name break | Route 53 → Registered domains → renew, or turn auto-renew on |
 | ACM certificate | Renewed by ACM automatically | Only fails if the validation CNAMEs in the public zone are deleted | Keep the `base` layer applied |
 | `gitops` deploy key | No expiry; replace yearly or if exposed | — | [Rotate it](#rotate-the-gitops-deploy-key) |
+| GitHub App `mlqube-argocd` key | No expiry; replace yearly or if exposed | — | [Rotate it](#rotate-the-github-app-key) |
 
 ## Rotate the router auth key
 
@@ -76,6 +78,13 @@ The immutable subject (`mlqube@<org-id>/…@<repo-id>`) means a deleted and re-c
 3. The next build (or `platform` → `addons-mgmt` → `apply` while running) puts the new key in the cluster.
 4. Delete the old deploy key on GitHub (`gh repo deploy-key list --repo mlqube/gitops`, then `gh repo deploy-key delete <id> --repo mlqube/gitops`), and the local key files.
 
+## Rotate the GitHub App key
+
+1. GitHub → mlqube → Settings → Developer settings → GitHub Apps → `mlqube-argocd` → **Generate a private key** (an App can have several at once).
+2. Overwrite the parameter: `aws ssm put-parameter --name /mlqube/argocd/github-app-private-key --type SecureString --value file://<new-key>.pem --overwrite --profile mlqube --region us-west-2`, then delete the `.pem`.
+3. The next build (or `platform` → `addons-mgmt` → `apply` while running) puts the new key in the cluster.
+4. Delete the old key on the App's page.
+
 ## Replace the Tailscale trust credential
 
 Create a new credential (setup step 9), update both GitHub secrets with `gh secret set`, run `platform` → `addons-mgmt` → `plan` to check, then delete the old credential in Tailscale.
@@ -86,6 +95,7 @@ Create a new credential (setup step 9), update both GitHub secrets with `gh secr
 |---|---|
 | Router auth key | Revoke it in Tailscale → Keys; check Machines for unknown devices and remove them; generate a new key ([rotate](#rotate-the-router-auth-key)) |
 | `gitops` deploy key | Delete the deploy key on GitHub (it can only read `gitops`, which holds no secrets); create a new one ([rotate](#rotate-the-gitops-deploy-key)) |
+| GitHub App `mlqube-argocd` key | Delete the key on the App's page (it can only read repositories); generate a new one ([rotate](#rotate-the-github-app-key)); check the organization's audit log for the App's activity |
 | Tailscale trust credential values | Delete the credential in Tailscale; create a new one; update both GitHub secrets |
 | Argo CD admin password | Usually nothing: the local admin is disabled. If it was enabled for a break-glass, set `argocd_admin_enabled = false` and apply, or destroy and rebuild |
 | Anything in a Git commit | Treat it as leaked even after removing the commit: rotate it first, then clean up history |

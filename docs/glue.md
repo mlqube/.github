@@ -104,8 +104,11 @@ mlqube/gitops                         (platform team: the platform itself)
 ├── clusters/mgmt/crossplane/
 │   ├── applicationset.yaml            # mgmt-crossplane: the engine (Helm chart)
 │   ├── providers-applicationset.yaml  # mgmt-crossplane-providers: providers, functions, sign-in
-│   ├── xrd-tenancy-applicationset.yaml   # mgmt-xrd-tenancy: applies the API below
-│   └── tenants-applicationset.yaml       # one app per tenant-* repository (SCM provider generator)
+│   └── tenancy-applicationset.yaml    # mgmt-crossplane-tenancy: applies the API below
+├── clusters/mgmt/tenants/             # per tenant-* repository (SCM provider generator, GitHub App):
+│   ├── tenants-applicationset.yaml    #   tenant-<id>: its tenant.yaml
+│   └── tenant-projects-applicationset.yaml  # tenant-<id>-projects: its projects/*.yaml
+├── clusters/mgmt/projects/tenants.yaml  # Argo CD project "tenants"
 └── platform/crossplane/providers/     # provider-aws-*, provider-kubernetes, functions (pinned)
 
 mlqube/xrd-tenancy                    (platform team: the API)
@@ -122,13 +125,14 @@ mlqube/tenant-retail-1042             (one per tenant, created by Backstage; cus
 - **Different lifecycles.** The engine changes when its chart version is bumped; the API with every API change; a tenant repository with every onboarding or quota change. Separate sources mean a broken Composition can't block an engine upgrade, and one tenant's change never touches another's.
 - **Order.** The API needs Crossplane's CRDs first, and the tenants need the API ([sync waves](https://github.com/mlqube/.github/issues/13)).
 - **Only requests in tenant repositories.** Argo CD applies just `Tenant` and `MLProject` objects from them (project `tenants`); the XRD limits what can be asked for, the Composition decides what's built.
+- **Two Applications per tenant repository.** The `MLProject`s go into the namespace `tenant-<id>`, which Crossplane creates from the `Tenant`. Argo CD checks every object before applying any of them and would refuse the whole sync while that namespace is missing, so the projects have their own Application, which retries until the namespace exists.
 - **mgmt only.** Crossplane runs in the hub and reaches the workload clusters through provider-kubernetes. Details: [Crossplane](platform/gitops/crossplane.md).
 
 The rest of the glue isn't Crossplane, so it lives with its own tool:
 
 | Part | Where (planned) | Applied by |
 |---|---|---|
-| XRDs and Compositions (B) | Repository `mlqube/xrd-tenancy` (app `mgmt-xrd-tenancy`) | Argo CD |
+| XRDs and Compositions (B) | Repository `mlqube/xrd-tenancy` (app `mgmt-crossplane-tenancy`) | Argo CD |
 | Kyverno policies (D) | `gitops` repository, next to the Kyverno policies already deployed ([Kyverno](platform/gitops/kyverno.md)) | Argo CD |
 | Backstage templates (A) | The Backstage repository (golden path stage 3) | Backstage |
 | MLflow permissions (C), if it's a controller | Its own small repository and image | Argo CD |
