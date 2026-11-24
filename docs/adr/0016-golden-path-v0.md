@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-11-24
 - **Deciders:** platform team
+- **Amended by:** [ADR-0018](0018-tenancy-through-crossplane-and-tenant-repos.md) (decisions 1, 6, 10: tenants through Crossplane, one repository per tenant)
 
 ## Context
 
@@ -16,7 +17,7 @@ The developer's view of the process is on [the golden path](../golden-path.md); 
 
 ### 1. What "done" means for v0
 
-An ML engineer creates a project in Backstage, pushes code to a feature branch, CI builds an image, the training workflow runs on a GPU, and the results are visible in MLflow; merging to `main` makes the official run and a registered model version; deleting the branch removes its images. One tenant (`retail-1042`), one project, made by hand where the glue would later do it.
+An ML engineer creates a project in Backstage, pushes code to a feature branch, CI builds an image, the training workflow runs on a GPU, and the results are visible in MLflow; merging to `main` makes the official run and a registered model version; deleting the branch removes its images. One tenant (`retail-1042`), one project, created through the glue's `Tenant` and `MLProject` APIs ([ADR-0018](0018-tenancy-through-crossplane-and-tenant-repos.md); originally made by hand).
 
 ### 2. Trunk-based development in every ML project
 
@@ -58,8 +59,8 @@ Backstage and MLflow each need PostgreSQL. **In v0 it runs in the management clu
 
 ### 6. Images: ECR in the same account and region, in the base layer
 
-- One repository per project, `mlqube/<tenant>/<project>`, in **us-west-2**, created in the **base layer**, which survives a destroy (images stay between sessions; storage costs cents).
-- **Push:** a GitHub OIDC role per project, allowed to push only to its repository. No keys.
+- One repository per project, `mlqube/tenants/<tenant>/<project>`, in **us-west-2**, created by the project's `MLProject` and kept on destroy (Crossplane `deletionPolicy: Orphan`), so images stay between sessions ([ADR-0018](0018-tenancy-through-crossplane-and-tenant-repos.md); originally the base layer).
+- **Push:** a GitHub OIDC role per project (`mlqube-tenant-<tenant>-<project>-ci`, created by the glue), allowed to push only to its repository. No keys.
 - **Pull:** the EKS nodes' existing read-only ECR permission. Over the NAT gateway today; VPC endpoints for ECR and S3 later (cheaper for large images).
 - Tags immutable (every tag carries a commit SHA), scan on push, the lifecycle rules above.
 
@@ -80,14 +81,14 @@ Per tenant, a Kueue **ClusterQueue** with the tenant's GPU quota; per project, t
 
 One MLflow server in the management cluster ([ADR-0007](0007-mlflow-multi-tenancy.md)): PostgreSQL in the cluster (decision 5), artifacts in an S3 bucket created in the base layer (with the `mlflow/dev/` lifecycle rule), reachable at `https://mlflow.mlqube.click` over Tailscale, sign-in through Dex. Workflows in `wl-nonprod` reach it over VPC peering. **Per-tenant permissions are not in v0**; they come in Phase 4 with the glue ([the MlQube glue](../glue.md), part C).
 
-### 10. The tenant and project are made by hand
+### 10. The tenant and project come from the glue
 
-`retail-1042` and its project `churn` are plain YAML in the `gitops` repository (namespace, queues, ServiceAccount, RBAC), plus Terraform for the ECR repository and roles. Writing them by hand shows exactly what the glue's `Tenant` and `MLProject` must generate in Phase 2.
+**Amended by [ADR-0018](0018-tenancy-through-crossplane-and-tenant-repos.md).** `retail-1042` and `churn` are a `Tenant` and an `MLProject` in the tenant's own repository `mlqube/tenant-retail-1042`; Argo CD applies them, Crossplane builds the namespace, queues, ServiceAccounts, RBAC and the AWS side. Originally they were plain YAML in `gitops` plus Terraform, to be replaced by the glue later.
 
 ## Consequences
 
 - An ML engineer can try the whole path early, and every later phase deepens a piece that already works end to end.
 - New components to run and upgrade: Argo Workflows, Kueue, MLflow, Backstage, CloudNativePG, oauth2-proxy.
 - v0's in-cluster databases lose their data on every destroy. Acceptable for the reference build; production uses RDS.
-- The hand-made tenant and project are temporary and will be replaced by the glue's APIs.
+- The tenant and project come from the glue's APIs from the start ([ADR-0018](0018-tenancy-through-crossplane-and-tenant-repos.md)), which moves that work into v0.
 - The retention rules must be tested, not just written: the end-to-end test deletes a branch and checks what's gone.

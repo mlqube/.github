@@ -95,31 +95,40 @@ When every object exists, the `Tenant` turns **Ready**, and Backstage shows it t
 
 A project belongs to a tenant; workspaces and deployments belong to a project. Users normally ask through Backstage; advanced users can write the YAML in Git directly. The same list is in the [architecture](architecture.md#platform-apis-the-glue-layer).
 
-## Where the glue will live, and how it's tested
+## Where the glue lives, and how it's tested
 
-The Crossplane part of the glue sits next to Crossplane in the `gitops` repository, as **separate Argo CD apps**: the engine and its providers (upstream) and the glue (ours). It's the same split as cert-manager and its issuers, or External Secrets and its stores ([clusters/mgmt](platform/gitops/clusters-mgmt.md)):
+Decided in [ADR-0018](adr/0018-tenancy-through-crossplane-and-tenant-repos.md). Three kinds of repositories, each with its own owner:
 
 ```
-gitops/
+mlqube/gitops                         (platform team: the platform itself)
 ├── clusters/mgmt/crossplane/
 │   ├── applicationset.yaml            # mgmt-crossplane: the engine (Helm chart)
 │   ├── providers-applicationset.yaml  # mgmt-crossplane-providers: providers, functions, sign-in
-│   └── glue-applicationset.yaml       # mgmt-crossplane-glue: our APIs (next)
-└── platform/crossplane/
-    ├── providers/              # provider-aws-*, provider-kubernetes, functions (pinned versions)
-    └── glue/                   # XRDs + Compositions: Tenant, MLProject, Workspace, ModelDeployment
+│   ├── xrd-tenancy-applicationset.yaml   # mgmt-xrd-tenancy: applies the API below
+│   └── tenants-applicationset.yaml       # one app per tenant-* repository (SCM provider generator)
+└── platform/crossplane/providers/     # provider-aws-*, provider-kubernetes, functions (pinned)
+
+mlqube/xrd-tenancy                    (platform team: the API)
+├── apis/tenant/        definition.yaml (XRD) · composition.yaml
+├── apis/mlproject/     definition.yaml (XRD) · composition.yaml
+├── examples/           sample Tenant and MLProject, rendered in CI
+└── .github/workflows/  crossplane render + schema checks on every pull request
+
+mlqube/tenant-retail-1042             (one per tenant, created by Backstage; customer: read only)
+├── tenant.yaml
+└── projects/churn.yaml
 ```
 
-- **Different lifecycles.** The engine changes when its chart version is bumped; the glue changes with every API change. Separate Applications mean a broken Composition can't block an engine upgrade, and an engine upgrade doesn't redeploy the APIs.
-- **Order.** The glue needs Crossplane's CRDs first, like the stores and issuers apps ([sync waves](https://github.com/mlqube/.github/issues/13)).
-- **Clear ownership.** One folder is upstream, the other is ours.
-- **mgmt only.** Crossplane runs in the hub and reaches the workload clusters through provider-kubernetes. Each app is an ApplicationSet with one element (`cluster: mgmt`), the convention for single-cluster add-ons: the root app may only create ApplicationSets. Details: [Crossplane](platform/gitops/crossplane.md).
+- **Different lifecycles.** The engine changes when its chart version is bumped; the API with every API change; a tenant repository with every onboarding or quota change. Separate sources mean a broken Composition can't block an engine upgrade, and one tenant's change never touches another's.
+- **Order.** The API needs Crossplane's CRDs first, and the tenants need the API ([sync waves](https://github.com/mlqube/.github/issues/13)).
+- **Only requests in tenant repositories.** Argo CD applies just `Tenant` and `MLProject` objects from them (project `tenants`); the XRD limits what can be asked for, the Composition decides what's built.
+- **mgmt only.** Crossplane runs in the hub and reaches the workload clusters through provider-kubernetes. Details: [Crossplane](platform/gitops/crossplane.md).
 
 The rest of the glue isn't Crossplane, so it lives with its own tool:
 
 | Part | Where (planned) | Applied by |
 |---|---|---|
-| XRDs and Compositions (B) | `gitops` repository, `platform/crossplane/glue/` (app `mgmt-crossplane-glue`) | Argo CD |
+| XRDs and Compositions (B) | Repository `mlqube/xrd-tenancy` (app `mgmt-xrd-tenancy`) | Argo CD |
 | Kyverno policies (D) | `gitops` repository, next to the Kyverno policies already deployed ([Kyverno](platform/gitops/kyverno.md)) | Argo CD |
 | Backstage templates (A) | The Backstage repository (golden path stage 3) | Backstage |
 | MLflow permissions (C), if it's a controller | Its own small repository and image | Argo CD |

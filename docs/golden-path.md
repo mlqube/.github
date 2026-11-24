@@ -25,7 +25,7 @@ Open Backstage (`https://backstage.mlqube.click`, over Tailscale; you sign in wi
 | What | Name |
 |---|---|
 | A GitHub repository, created from [`ml-project-template`](#what-the-template-gives-you) | `retail-1042-churn` |
-| An image repository in ECR | `mlqube/retail-1042/churn` |
+| An image repository in ECR | `mlqube/tenants/retail-1042/churn` |
 | A namespace for your runs, with two GPU queues (`dev`, `main`) | `retail-1042-churn` |
 | Two MLflow experiments | `/retail-1042/churn/dev`, `/retail-1042/churn/main` |
 
