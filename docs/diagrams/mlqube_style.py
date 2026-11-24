@@ -183,7 +183,8 @@ def new_diagram(name: str, title: str, subtitle: str, **graph_attr: str) -> Diag
         edge_attr=EDGE_ATTR,
     )
     diagram.render = lambda: Path(diagram.filename).write_text(diagram.dot.source, encoding="utf-8")
-    diagram.dot.attr(
+    # Graph attributes, not a body statement: `legend_below` wraps the whole body in a frame.
+    diagram.dot.graph_attr.update(
         label=(
             f'<<font point-size="40" face="{FONT} Semibold">{title}</font><br/>'
             f'<font point-size="18" color="#616161">{subtitle}</font><br/> >'
@@ -194,65 +195,86 @@ def new_diagram(name: str, title: str, subtitle: str, **graph_attr: str) -> Diag
     return diagram
 
 
+def legend_below(dot, legend_html: str) -> None:
+    """Put the legend under the whole picture, centred, instead of beside it.
+
+    Wraps everything drawn so far in an invisible frame (a cluster) whose label is the legend,
+    at the bottom. The pictures are wide, so a legend at the side shrinks them; below, it uses
+    the width that is already there. Call it last, after every node and edge is declared.
+    """
+    dot.body[:] = [
+        "\tsubgraph cluster_legend_frame {\n",
+        *dot.body,
+        # Attributes last: nested clusters copy their parent's attributes when they are declared,
+        # so set before the body, labelloc=b would move every lane title to the bottom.
+        f"\t\tlabel={legend_html}\n",
+        "\t\tlabelloc=b labeljust=c pencolor=white style=solid margin=16 fontsize=14\n",
+        "\t}\n",
+    ]
+
+
 def legend(
     lanes: list[str | tuple[str, str]],
     flows: list[tuple[int | None, str, str, str]],
     flows_title: str = "Numbered flows",
     note: str | None = "Access, data and runtime dependencies",
 ) -> str:
-    """HTML legend: swimlane keys (or (key, name)), then flows as (number, colour, style, text)."""
-    rows = [
-        '<tr><td colspan="2" align="left"><font point-size="20"><b>Legend</b></font></td></tr>',
-        '<tr><td colspan="2" align="left"><font point-size="15" color="#424242"><b>Swimlanes</b></font></td></tr>',
-    ]
+    """HTML legend, laid out wide for the bottom of the picture: swimlane keys (or (key, name))
+    in the first column, then the flows as (number, colour, style, text) in one or two columns."""
+
+    def heading(text: str) -> str:
+        return f'<tr><td colspan="2" align="left"><font point-size="15" color="#424242"><b>{text}</b></font></td></tr>'
+
+    def column(rows: list[str]) -> str:
+        return (
+            '<td valign="top"><table border="0" cellborder="0" cellspacing="4" cellpadding="3">'
+            + "".join(rows)
+            + "</table></td>"
+        )
+
+    lane_rows = [heading("Swimlanes")]
     for item in lanes:
         key, name = item if isinstance(item, tuple) else (item, LANE_NAMES[item])
         fill, border = LANE[key]
-        rows.append(
+        lane_rows.append(
             f'<tr><td width="34" height="20" bgcolor="{fill}" color="{border}" border="2"></td>'
             f'<td align="left"><font point-size="14">{name}</font></td></tr>'
         )
-    rows.append(
-        f'<tr><td colspan="2" align="left"><font point-size="15" color="#424242"><b>{flows_title}</b></font></td></tr>'
-    )
+
+    flow_rows = []
     for n, colour, style, text in flows:
         number = f"<b>{CIRCLED[n]}</b> " if n else ""
-        rows.append(
+        flow_rows.append(
             f'<tr><td align="center"><font color="{colour}" point-size="16"><b>{LINE_SAMPLE[style]}</b></font></td>'
             f'<td align="left"><font color="{colour}" point-size="14">{number}{text}</font></td></tr>'
         )
     if note:
-        rows.append(
+        flow_rows.append(
             '<tr><td align="center"><font color="#9E9E9E" point-size="16">────</font></td>'
             f'<td align="left"><font color="#616161" point-size="14">{note}</font></td></tr>'
         )
+    # Long flow lists go in two columns, so the legend stays short.
+    half = (len(flow_rows) + 1) // 2 if len(flow_rows) > len(lane_rows) else len(flow_rows)
+    flow_cols = [column([heading(flows_title)] + flow_rows[:half])]
+    if flow_rows[half:]:
+        flow_cols.append(column([heading("&#160;")] + flow_rows[half:]))
+
     return (
-        '<<table border="1" color="#BDBDBD" cellborder="0" cellspacing="4" cellpadding="3" bgcolor="white">'
-        + "".join(rows)
-        + "</table>>"
+        '<<table border="1" color="#BDBDBD" cellborder="0" cellspacing="8" cellpadding="4" bgcolor="white">'
+        '<tr><td colspan="9" align="left"><font point-size="20"><b>Legend</b></font></td></tr>'
+        "<tr>" + column(lane_rows) + "".join(flow_cols) + "</tr></table>>"
     )
 
 
 def place_columns(diagram: Diagram, columns: list[list[Node]], legend_label: str | None = None) -> None:
-    """Pin nodes to columns (ranks), left to right; the legend gets the last column."""
+    """Pin nodes to columns (ranks), left to right; the legend goes under the whole picture."""
     dot = diagram.dot
     for col in columns:
         dot.body.append("{rank=same; " + " ".join(f'"{n.nodeid}";' for n in col) + "}")
     for left, right in zip(columns, columns[1:]):
         dot.edge(left[0].nodeid, right[0].nodeid, style="invis", weight="10")
     if legend_label:
-        dot.node(
-            "legend",
-            label=legend_label,
-            shape="plaintext",
-            margin="0",
-            fixedsize="false",
-            width="0",
-            height="0",
-            image="",
-            labelloc="c",
-        )
-        dot.edge(columns[-1][0].nodeid, "legend", style="invis")
+        legend_below(dot, legend_label)
 
 
 # --------------------------------------------------------------------------- render

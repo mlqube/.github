@@ -14,7 +14,7 @@ Writes:
 
 from __future__ import annotations
 
-from app_of_apps import EDGE, FONT, IMAGES, NODE, box, icon  # also sets PATH for Graphviz
+from app_of_apps import EDGE, FONT, IMAGES, NODE, box, icon, legend_below, line_cells  # also sets PATH for Graphviz
 
 from diagrams import Diagram, Edge
 from diagrams.aws.compute import EC2Ami, EC2SpotInstance
@@ -61,24 +61,7 @@ USER = {"color": "#5E35B1", "penwidth": "2.0"}
 
 
 def legend(diagram, rows: list[tuple[str, str, str]]) -> None:
-    cells = "".join(
-        f'<tr><td><font color="{c}" point-size="16"><b>{line}</b></font></td>'
-        f'<td align="left"><font point-size="13">{text}</font></td></tr>'
-        for c, line, text in rows
-    )
-    diagram.dot.node(
-        "legend",
-        shape="plaintext",
-        fixedsize="false",
-        width="0",
-        height="0",
-        image="",
-        labelloc="c",
-        label=(
-            '<<table border="1" color="#BDBDBD" cellborder="0" cellspacing="4" cellpadding="3" bgcolor="white">'
-            '<tr><td colspan="2" align="left"><b>Legend</b></td></tr>' + cells + "</table>>"
-        ),
-    )
+    legend_below(diagram, line_cells(rows))
 
 
 def diagram(title: str, out: str) -> Diagram:
