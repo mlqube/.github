@@ -101,25 +101,50 @@ def icon(name: str) -> str:
     return str(HERE.parent / "icons" / f"{name}.png")  # shared docs/diagrams/icons
 
 
+def legend_below(diagram, cells: list[str], columns: int = 2) -> None:
+    """Draw the legend under the whole picture, centred, with its entries in `columns` columns.
+
+    Each cell is an HTML `<td>…</td><td>…</td>` pair (sample, text). Everything declared so far is
+    wrapped in an invisible frame (a cluster) whose bottom label is the legend: a legend beside a
+    wide picture makes the picture smaller, below it uses width that is already there.
+    Call it last, after every node and edge is declared. Shared by every platform diagram.
+    """
+    per_col = -(-len(cells) // columns)
+    cols = [cells[i:i + per_col] for i in range(0, len(cells), per_col)]
+    body = "".join(
+        '<td valign="top"><table border="0" cellborder="0" cellspacing="4" cellpadding="3">'
+        + "".join(f"<tr>{c}</tr>" for c in col)
+        + "</table></td>"
+        for col in cols
+    )
+    label = (
+        '<<table border="1" color="#BDBDBD" cellborder="0" cellspacing="4" cellpadding="4" bgcolor="white">'
+        f'<tr><td colspan="{len(cols)}" align="left"><font point-size="15"><b>Legend</b></font></td></tr>'
+        f"<tr>{body}</tr></table>>"
+    )
+    dot = diagram.dot
+    dot.body[:] = [
+        "\tsubgraph cluster_legend_frame {\n",
+        *dot.body,
+        # Attributes last: nested clusters copy their parent's attributes when they are declared,
+        # so set before the body, labelloc=b would move every box title to the bottom.
+        f"\t\tlabel={label}\n",
+        f'\t\tlabelloc=b labeljust=c pencolor=white style=solid margin=12 fontsize=13 fontname="{FONT}"\n',
+        "\t}\n",
+    ]
+
+
+def line_cells(rows: list[tuple[str, str, str]]) -> list[str]:
+    """Legend cells for edge styles: (colour, line sample, text)."""
+    return [
+        f'<td><font color="{c}" point-size="16"><b>{line}</b></font></td>'
+        f'<td align="left"><font point-size="13">{text}</font></td>'
+        for c, line, text in rows
+    ]
+
+
 def legend(diagram) -> None:
-    cells = "".join(
-        f'<tr><td><font color="{c}" point-size="16"><b>{line}</b></font></td>'
-        f'<td align="left"><font point-size="13">{text}</font></td></tr>'
-        for c, line, text in LEGEND_ROWS
-    )
-    diagram.dot.node(
-        "legend",
-        shape="plaintext",
-        fixedsize="false",
-        width="0",
-        height="0",
-        image="",
-        labelloc="c",
-        label=(
-            '<<table border="1" color="#BDBDBD" cellborder="0" cellspacing="4" cellpadding="3" bgcolor="white">'
-            '<tr><td colspan="2" align="left"><b>Legend</b></td></tr>' + cells + "</table>>"
-        ),
-    )
+    legend_below(diagram, line_cells(LEGEND_ROWS))
 
 
 def app_of_apps() -> None:

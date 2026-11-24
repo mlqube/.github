@@ -129,23 +129,16 @@ def wire_access(operator, tailscale, ci, control_plane, ebs, ebs_role):
 
 
 def legend(diagram: Diagram) -> None:
-    diagram.dot.node(
-        "legend",
-        shape="plaintext",
-        fixedsize="false",
-        width="0",
-        height="0",
-        image="",
-        labelloc="c",
-        label=(
-            '<<table border="1" color="#BDBDBD" cellborder="0" cellspacing="4" cellpadding="3" bgcolor="white">'
-            '<tr><td colspan="2" align="left"><b>Legend</b></td></tr>'
-            f'<tr><td width="30" height="16" bgcolor="{NOW[0]}" color="{NOW[1]}" border="2"></td>'
-            '<td align="left">Created by this layer now (Terraform)</td></tr>'
-            f'<tr><td width="30" height="16" bgcolor="{LATER[0]}" color="{LATER[1]}" border="2" style="dashed"></td>'
-            '<td align="left">Installed later through Argo CD (phase in the box title)</td></tr>'
-            "</table>>"
-        ),
+    from app_of_apps import legend_below  # noqa: PLC0415 (shared legend layout)
+
+    legend_below(
+        diagram,
+        [
+            f'<td width="30" height="16" bgcolor="{NOW[0]}" color="{NOW[1]}" border="2"></td>'
+            '<td align="left">Created by this layer now (Terraform)</td>',
+            f'<td width="30" height="16" bgcolor="{LATER[0]}" color="{LATER[1]}" border="2" style="dashed"></td>'
+            '<td align="left">Installed later through Argo CD (phase in the box title)</td>',
+        ],
     )
 
 
