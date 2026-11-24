@@ -21,3 +21,4 @@ Each important MlQube architecture decision is recorded as an ADR. To propose a 
 | [0015](0015-iam-identity-center-identity-hub.md) | IAM Identity Center as the identity hub (amends 0009) | Accepted |
 | [0016](0016-golden-path-v0.md) | Golden path v0: trunk-based ML projects, from a feature branch to a registered model | Accepted |
 | [0017](0017-ai-assistance-in-the-platform.md) | AI assistance in the platform: use cases and rules (parked) | Proposed |
+| [0018](0018-tenancy-through-crossplane-and-tenant-repos.md) | Tenants through Crossplane, one repository per tenant (amends 0016) | Accepted |

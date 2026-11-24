@@ -23,16 +23,18 @@
 - [ ] `platform` AppProject: the new chart repositories, namespaces and cluster-wide kinds (written)
 - [ ] **Test (build A):** a workflow with a GPU step queues in Kueue, gets a Karpenter GPU node, runs, and the node goes away; a second tenant's queue can't use the first one's quota (the Phase 1a spike)
 
-## 2. The hand-made tenant and project (gitops + Terraform)
+## 2. Tenants through the glue ([ADR-0018](adr/0018-tenancy-through-crossplane-and-tenant-repos.md))
 
-- [ ] `gitops/tenants/retail-1042/`: namespace `retail-1042-churn` (label `mlqube/tenant: retail-1042`), ClusterQueue (GPU quota), LocalQueues `dev` and `main`, WorkloadPriorityClass for `dev`, ServiceAccounts (workflow runner, CI submitter), RBAC
-- [ ] Workflow runner: Pod Identity role with access to the tenant's S3 prefix and MLflow's bucket prefix only
-- [ ] CI submitter token in Secrets Manager `mlqube/tenants/retail-1042/churn/argo-ci`
+- [x] Crossplane in mgmt: engine, providers (AWS, Kubernetes), functions, their access; boundary `mlqube-boundary-tenant` ([Crossplane](platform/gitops/crossplane.md); not tested live)
+- [ ] Repository `mlqube/xrd-tenancy`: XRDs and Compositions for `Tenant` and `MLProject`, examples, CI render tests
+- [ ] `gitops`: ApplicationSet for `xrd-tenancy` (mgmt); ApplicationSet with the SCM provider generator for `tenant-*` repositories; Argo CD project `tenants`
+- [ ] GitHub App `mlqube-argocd` (read all repositories) and Argo CD's credentials template for `https://github.com/mlqube` (Terraform, key from Parameter Store). *By hand, once: create the GitHub App.*
+- [ ] Destroy workflow: delete the tenant Applications and wait until no `Tenant` is left, before the add-ons layer
+- [ ] Repository `mlqube/tenant-retail-1042` with `tenant.yaml` and `projects/churn.yaml`, made by the platform team (Backstage does it from section 6)
+- [ ] **Test:** the tenant and project appear in wl-nonprod (namespace, queues, ServiceAccounts, RBAC) and AWS (role, bucket, ECR repository, CI role, secret); a second build takes the bucket and ECR repository back over
 
-## 3. Images and CI access (base layer)
+## 3. CI access
 
-- [ ] ECR repository `mlqube/retail-1042/churn` in the base layer: immutable tags, scan on push, lifecycle rule `feat-*` after 14 days
-- [ ] GitHub OIDC role `mlqube-ci-retail-1042-churn`: push to that repository, read the CI token secret; trusted only for the project repository
 - [ ] Tailscale for project CI: an ACL tag for CI jobs that may reach only the Argo Workflows server (not the cluster APIs)
 
 ## 4. MLflow v0 (mgmt)
@@ -57,8 +59,9 @@
 
 - [ ] `mlqube/backstage`: Backstage app, image built by CI and pushed to ECR
 - [ ] Backstage add-on: PostgreSQL (CloudNativePG), Dex client (OIDC), Ingress `backstage.mlqube.click`
-- [ ] GitHub App for Backstage (create repositories from the template, read the catalog); its private key in Secrets Manager `mlqube/platform/backstage/github-app`, delivered by External Secrets. *By hand, once: create the GitHub App.*
-- [ ] Software template "New ML project": creates the repository from `ml-project-template` and opens the pull requests that add the project to `gitops` and Terraform (v0: for an existing tenant)
+- [ ] GitHub App `mlqube-backstage` (create repositories, write contents, read the catalog); its private key in Secrets Manager `mlqube/platform/backstage/github-app`, delivered by External Secrets. *By hand, once: create the GitHub App.*
+- [ ] Software template "New tenant": creates the repository `tenant-<id>` with `tenant.yaml` from the form; the customer gets read access ([ADR-0018](adr/0018-tenancy-through-crossplane-and-tenant-repos.md))
+- [ ] Software template "New ML project": creates the project's repository from `ml-project-template` and adds `projects/<project>.yaml` to its tenant's repository
 - [ ] Links from the catalog to the project's Argo Workflows, MLflow experiments and ECR repository
 
 ## 7. End-to-end test (build B)
@@ -72,6 +75,6 @@
 
 ## Later (not in v0)
 
-- Per-tenant MLflow permissions, more tenants and projects from the glue's `Tenant` and `MLProject` (Phase 2 onwards)
+- Per-tenant MLflow permissions; Capsule, default-deny NetworkPolicies and quotas in the `Tenant`'s Composition (Phase 2 onwards)
 - RDS instead of in-cluster PostgreSQL; ECR in a shared-services account; reusable CI workflows; self-hosted runners in the VPC (ADR-0016 enterprise paths)
 - Promotion to serving (`ModelDeployment`, Phase 5)

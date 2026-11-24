@@ -16,7 +16,7 @@ It runs in **mgmt only**, as an Argo CD app like the other add-ons, and reaches 
 | **Providers** | Plug-ins that manage one kind of external system, each object a *managed resource* | provider-kubernetes; provider-aws-iam, -s3, -ecr, -secretsmanager, -eks (with provider-family-aws) |
 | **Functions** | Steps a Composition runs to render its resources | function-go-templating, function-auto-ready |
 | **ClusterProviderConfigs** | How a provider signs in | `default` (AWS, Pod Identity); `wl-nonprod` (provider-kubernetes) |
-| **XRDs and Compositions** | Our APIs and their logic | Next step (`platform/crossplane/glue/`) |
+| **XRDs and Compositions** | Our APIs and their logic | Next step: repository `mlqube/xrd-tenancy`; the requests in one `tenant-<id>` repository per tenant ([ADR-0018](../../adr/0018-tenancy-through-crossplane-and-tenant-repos.md)) |
 
 ## What exists, and who creates it
 
@@ -96,7 +96,7 @@ kubectl --context mgmt get managedresourcedefinitions | grep -c Active   # only 
 
 ## Destroy
 
-Nothing in this step creates AWS resources. Once the glue creates tenants, their AWS resources must be deleted (by deleting the `Tenant` objects) **before** the platform is destroyed, or they stay behind; the destroy workflow gets that step with the glue.
+Nothing in this step creates AWS resources. Once the glue creates tenants, the destroy workflow deletes the tenant Applications and waits until no `Tenant` is left **before** it destroys the add-ons layer; otherwise their AWS resources would stay behind. Buckets and ECR repositories are kept on purpose (`deletionPolicy: Orphan`) and taken back over by the next build ([ADR-0018](../../adr/0018-tenancy-through-crossplane-and-tenant-repos.md)).
 
 ## Related
 
