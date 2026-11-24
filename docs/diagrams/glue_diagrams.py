@@ -202,8 +202,8 @@ def tenant():
         with lane("Shared AWS services", "shared"):
             secrets = SecretsManager("Secrets Manager\nmlqube/tenants/retail-1042/*")
             pia = IdentityAndAccessManagementIamRole("Pod Identity association\nServiceAccount → role")
-            role = IdentityAndAccessManagementIamRole("IAM role mlqube-retail-1042\nonly this tenant's bucket,\nECR repos and secrets")
-            bucket = SimpleStorageServiceS3Bucket("S3 bucket\nmlqube-retail-1042-nonprod")
+            role = IdentityAndAccessManagementIamRole("IAM role mlqube-tenant-retail-1042\nonly this tenant's bucket,\nECR repos and secrets")
+            bucket = SimpleStorageServiceS3Bucket("S3 bucket\nmlqube-tenant-retail-1042-nonprod")
 
         yaml >> step(1, ORANGE, "merged → synced") >> argocd
         argocd >> step(1, ORANGE, "applies") >> xr

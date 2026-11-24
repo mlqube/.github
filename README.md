@@ -70,6 +70,7 @@ The platform is built for each test session and destroyed afterwards. When it ru
 | **Kyverno** | both | Policy engine: Pod Security baseline policies, Audit mode | [kyverno](docs/platform/gitops/kyverno.md) | ✅ tested live |
 | **Kueue** | wl-nonprod | The job queue: decides when an ML job may start, within each tenant's GPU quota | [kueue](docs/platform/gitops/kueue.md) | 🕓 written, first test at the next build |
 | **Argo Workflows** | wl-nonprod | Runs ML jobs and pipelines (Python with Hera); `https://workflows.nonprod.mlqube.click` | [argo-workflows](docs/platform/gitops/argo-workflows.md) | 🕓 written, first test at the next build |
+| **Crossplane** | mgmt | The engine behind the glue: turns MlQube's own APIs (later `Tenant`, `MLProject`) into objects in the workload clusters and in AWS | [crossplane](docs/platform/gitops/crossplane.md) | 🕓 written, first test at the next build |
 | **metrics-server** | both | CPU and memory use for `kubectl top` and autoscaling | [metrics-server](docs/platform/gitops/metrics-server.md) | ✅ tested live |
 
 How each add-on is wired into Argo CD (projects, which clusters, conventions): [`clusters/mgmt`](docs/platform/gitops/clusters-mgmt.md). **Not built yet**, in roadmap order: Capsule and the `Tenant` API, MLflow, KServe, Backstage, and observability ([roadmap](docs/roadmap.md), [Phase 1 plan](docs/phase-1-plan.md)). Next: [golden path v0](docs/golden-path-v0-plan.md), so an ML engineer can go from a feature branch to a registered model ([how it works](docs/golden-path.md)).

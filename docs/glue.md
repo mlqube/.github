@@ -75,7 +75,7 @@ What a `Tenant` creates (the picture above):
 | Where | Objects | Created by |
 |---|---|---|
 | **Workload clusters** | Capsule tenant (owners = the tenant's Identity Center groups), namespaces `retail-1042-*` with the `mlqube/tenant` label, ResourceQuota, Kueue ClusterQueue and LocalQueue (GPU quota, fair share), default-deny NetworkPolicy, a ServiceAccount for workloads, RoleBindings (developers: edit, viewers: view) | provider-kubernetes (Capsule then creates the namespaces and quotas) |
-| **AWS** | S3 bucket `mlqube-retail-1042-<env>`, IAM role `mlqube-retail-1042` (only this tenant's bucket, ECR repositories and secrets), the Pod Identity association ServiceAccount → role, the secrets path `mlqube/tenants/retail-1042/*` | provider-aws |
+| **AWS** | S3 bucket `mlqube-tenant-retail-1042-<env>`, IAM role `mlqube-tenant-retail-1042` (only this tenant's bucket, ECR repositories `mlqube/tenants/retail-1042/*` and secrets; within the boundary `mlqube-boundary-tenant`), the Pod Identity association ServiceAccount → role, the secrets path `mlqube/tenants/retail-1042/*` | provider-aws |
 | **MLflow** | Permissions on experiments `/retail-1042/*` and models `retail-1042.*` for the tenant's groups | The glue's MLflow function or controller |
 
 When every object exists, the `Tenant` turns **Ready**, and Backstage shows it to whoever asked. Delete the file, and Crossplane removes what it created (with a deletion policy that keeps data, such as the S3 bucket, until someone decides otherwise).
@@ -97,28 +97,29 @@ A project belongs to a tenant; workspaces and deployments belong to a project. U
 
 ## Where the glue will live, and how it's tested
 
-The Crossplane part of the glue sits next to Crossplane in the `gitops` repository, as **two Argo CD Applications**: the engine (upstream) and the glue (ours). It's the same split as cert-manager and its issuers, or External Secrets and its stores ([clusters/mgmt](platform/gitops/clusters-mgmt.md)):
+The Crossplane part of the glue sits next to Crossplane in the `gitops` repository, as **separate Argo CD apps**: the engine and its providers (upstream) and the glue (ours). It's the same split as cert-manager and its issuers, or External Secrets and its stores ([clusters/mgmt](platform/gitops/clusters-mgmt.md)):
 
 ```
 gitops/
 ├── clusters/mgmt/crossplane/
-│   ├── application.yaml        # mgmt-crossplane: the engine (Helm chart, providers, functions)
-│   └── glue-application.yaml   # mgmt-crossplane-glue: our APIs
+│   ├── applicationset.yaml            # mgmt-crossplane: the engine (Helm chart)
+│   ├── providers-applicationset.yaml  # mgmt-crossplane-providers: providers, functions, sign-in
+│   └── glue-applicationset.yaml       # mgmt-crossplane-glue: our APIs (next)
 └── platform/crossplane/
-    ├── providers/              # provider-aws, provider-kubernetes, functions (pinned versions)
+    ├── providers/              # provider-aws-*, provider-kubernetes, functions (pinned versions)
     └── glue/                   # XRDs + Compositions: Tenant, MLProject, Workspace, ModelDeployment
 ```
 
 - **Different lifecycles.** The engine changes when its chart version is bumped; the glue changes with every API change. Separate Applications mean a broken Composition can't block an engine upgrade, and an engine upgrade doesn't redeploy the APIs.
 - **Order.** The glue needs Crossplane's CRDs first, like the stores and issuers apps ([sync waves](https://github.com/mlqube/.github/issues/13)).
 - **Clear ownership.** One folder is upstream, the other is ours.
-- **mgmt only.** Crossplane runs in the hub and reaches the workload clusters through provider-kubernetes, so these are plain Applications, not ApplicationSets across clusters.
+- **mgmt only.** Crossplane runs in the hub and reaches the workload clusters through provider-kubernetes. Each app is an ApplicationSet with one element (`cluster: mgmt`), the convention for single-cluster add-ons: the root app may only create ApplicationSets. Details: [Crossplane](platform/gitops/crossplane.md).
 
 The rest of the glue isn't Crossplane, so it lives with its own tool:
 
 | Part | Where (planned) | Applied by |
 |---|---|---|
-| XRDs and Compositions (B) | `gitops` repository, `platform/crossplane/glue/` (Application `mgmt-crossplane-glue`) | Argo CD |
+| XRDs and Compositions (B) | `gitops` repository, `platform/crossplane/glue/` (app `mgmt-crossplane-glue`) | Argo CD |
 | Kyverno policies (D) | `gitops` repository, next to the Kyverno policies already deployed ([Kyverno](platform/gitops/kyverno.md)) | Argo CD |
 | Backstage templates (A) | The Backstage repository (golden path stage 3) | Backstage |
 | MLflow permissions (C), if it's a controller | Its own small repository and image | Argo CD |

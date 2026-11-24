@@ -45,11 +45,14 @@ Examples: `retail-1042`, `risk-analytics-2001`
 | Label on every resource | `mlqube/tenant: <tenant>` | `mlqube/tenant: retail-1042` |
 | Kueue queue | `<tenant>` | `retail-1042` |
 | Identity provider groups | `mlqube-<tenant>-admins` / `-developers` / `-viewers` | `mlqube-retail-1042-developers` |
-| IAM role (Pod Identity) | `mlqube-<tenant>-<env>` | `mlqube-retail-1042-nonprod` |
-| S3 data bucket | `<org-prefix>-<tenant>-<env>` | `acme-mlqube-retail-1042-nonprod` |
+| IAM role (Pod Identity) | `mlqube-tenant-<tenant>-<env>` | `mlqube-tenant-retail-1042-nonprod` |
+| S3 data bucket | `mlqube-tenant-<tenant>-<env>` (an enterprise puts its org prefix in front) | `mlqube-tenant-retail-1042-nonprod` |
+| ECR repositories, Secrets Manager | `mlqube/tenants/<tenant>/...` | `mlqube/tenants/retail-1042/churn` |
 | MLflow artifact prefix | `s3://<mlflow-bucket>/tenants/<tenant>/` | `.../tenants/retail-1042/` |
 | MLflow experiments / models | `/<tenant>/<project>/<name>` and `<tenant>.<project>.<model>` | `/retail-1042/churn/baseline` |
 | Cost reports (OpenCost) | Grouped by the `mlqube/tenant` label | Spend per BU |
+
+**Amended 2026-11-24:** AWS names of tenant resources start with `mlqube-tenant-` (or the path `mlqube/tenants/`) instead of `mlqube-<tenant>-`. Crossplane creates them, and its IAM role is fenced by name ([Crossplane](../platform/gitops/crossplane.md#what-crossplane-may-do-in-aws)); with `mlqube-<tenant>-` the fence would have to be `mlqube-*`, which also matches the platform's own roles.
 
 ### Isolation controls for every tenant
 
