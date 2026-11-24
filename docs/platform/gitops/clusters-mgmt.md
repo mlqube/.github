@@ -18,6 +18,8 @@ Each shared add-on is an **ApplicationSet** with a *cluster generator*: it creat
 | [`metrics-server/`](metrics-server.md) | metrics-server: current CPU and memory use for `kubectl top` and autoscaling | `metrics-server` 3.14.0 | `kube-system` | none |
 | [`nvidia-device-plugin/`](karpenter.md#gpu-nodes-wl-nonprod) | NVIDIA device plugin: makes GPUs schedulable; runs only on GPU nodes (none in mgmt) | `nvidia-device-plugin` 0.20.1 | `kube-system` | none |
 | [`external-secrets/`](external-secrets.md) | External Secrets Operator: secrets from AWS Secrets Manager into Kubernetes Secrets, plus the `ClusterSecretStore` `aws-secrets-manager` from [`platform/external-secrets`](https://github.com/mlqube/gitops/tree/main/platform/external-secrets) | `external-secrets` 2.14.0 | `external-secrets` | role for `external-secrets`, read-only, secrets `mlqube/platform/*` only |
+| [`kueue/`](kueue.md) | Kueue: the job queue (when a job may start, per tenant quota), plus ResourceFlavors and priorities from [`platform/kueue/<cluster>`](https://github.com/mlqube/gitops/tree/main/platform/kueue). **Workload clusters only** (`mlqube/role: spoke`) | `kueue` 0.20.5 (OCI) | `kueue-system` | none |
+| [`argo-workflows/`](argo-workflows.md) | Argo Workflows: ML jobs and pipelines; UI and API at `workflows.nonprod.mlqube.click`, sign-in through Dex; the Dex client secret from [`platform/argo-workflows`](https://github.com/mlqube/gitops/tree/main/platform/argo-workflows) (External Secrets). **Workload clusters only** | `argo-workflows` 2.0.18 | `argo` | none |
 
 ## Argo CD projects: what each Application may do
 

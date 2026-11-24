@@ -16,10 +16,11 @@
 
 ## 1. Argo Workflows and Kueue (wl-nonprod)
 
-- [ ] Kueue add-on (ApplicationSet, wl-nonprod only): plain-pod integration on, limited to namespaces labelled `mlqube/tenant`
-- [ ] Argo Workflows add-on (wl-nonprod): server with `sso` + `client` auth modes, workflow archive (PostgreSQL), default workflow TTL; Ingress `workflows.nonprod.mlqube.click` on the internal ALB
-- [ ] Dex client `argo-workflows` (Terraform `sso.tf`), secret into the Argo Workflows namespace; RBAC: platform admins full, tenant groups their namespaces (v0: admins only)
-- [ ] `platform` AppProject: the new chart repositories, namespaces and cluster-wide kinds
+- [ ] Kueue add-on (ApplicationSet, wl-nonprod only): plain-pod integration on, limited to namespaces labelled `mlqube/tenant`; ResourceFlavors `cpu`/`gpu`, priorities `mlqube-main`/`mlqube-dev` (written: [Kueue](platform/gitops/kueue.md))
+- [ ] Argo Workflows add-on (wl-nonprod): server with `sso` + `client` auth modes, default workflow TTL; Ingress `workflows.nonprod.mlqube.click` on the internal ALB (written: [Argo Workflows](platform/gitops/argo-workflows.md))
+- [ ] Argo Workflows' workflow archive (needs PostgreSQL: with section 4)
+- [ ] Dex client `argo-workflows` (Terraform `sso.tf`), secret through Secrets Manager and External Secrets into the `argo` namespace; v0: who can sign in is decided by the Identity Center assignment (admins), `sso.rbac` off; per-tenant RBAC with the tenants (written)
+- [ ] `platform` AppProject: the new chart repositories, namespaces and cluster-wide kinds (written)
 - [ ] **Test (build A):** a workflow with a GPU step queues in Kueue, gets a Karpenter GPU node, runs, and the node goes away; a second tenant's queue can't use the first one's quota (the Phase 1a spike)
 
 ## 2. The hand-made tenant and project (gitops + Terraform)
