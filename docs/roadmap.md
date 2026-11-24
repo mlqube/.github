@@ -1,6 +1,8 @@
 # Roadmap
 
 > Phases are ordered by dependency and user value. Running Python ML code as Argo Workflows jobs is the core developer experience, so it comes immediately after the foundation and tenancy.
+>
+> **Next: [golden path v0](golden-path-v0-plan.md)** ([ADR-0016](adr/0016-golden-path-v0.md)): a thin slice of Phases 1a, 3, 4 and 6, built end to end for one hand-made tenant before each phase is deepened. How it works for an ML engineer: [the golden path](golden-path.md).
 
 | Phase | Goal | Exit criteria |
 |---|---|---|
