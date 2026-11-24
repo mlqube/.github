@@ -46,6 +46,8 @@ Account-specific identifiers are written as placeholders: `<account-id>` (AWS ac
 | [Kyverno](gitops/kyverno.md) | Policy engine; Pod Security baseline policies in Audit mode; moving to Enforce | [`clusters/mgmt/kyverno/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/kyverno) |
 | [metrics-server](gitops/metrics-server.md) | CPU and memory use for `kubectl top` and autoscaling | [`clusters/mgmt/metrics-server/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/metrics-server) |
 | [External Secrets](gitops/external-secrets.md) | Secrets from AWS Secrets Manager into Kubernetes Secrets; who may read what | [`clusters/mgmt/external-secrets/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/external-secrets) |
+| [Kueue](gitops/kueue.md) | The job queue: per-tenant GPU quotas, dev/main priorities; testing it | [`clusters/mgmt/kueue/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/kueue) |
+| [Argo Workflows](gitops/argo-workflows.md) | ML jobs and pipelines; sign-in through Dex; checking it | [`clusters/mgmt/argo-workflows/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/argo-workflows) |
 | [Karpenter](gitops/karpenter.md) | Nodes on demand, with the Karpenter flow diagram | [`clusters/mgmt/karpenter/`](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/karpenter) |
 
 ## Diagrams
