@@ -26,3 +26,9 @@ import glue_diagrams  # noqa: E402
 mlqube_style.publish(glue_diagrams.overview(), "glue_1_overview")
 mlqube_style.publish(glue_diagrams.tenant(), "glue_2_tenant")
 mlqube_style.publish(glue_diagrams.apis(), "glue_3_apis")
+
+# The golden path pictures (docs/golden-path.md)
+import golden_path_diagrams  # noqa: E402
+
+mlqube_style.publish(golden_path_diagrams.developer_flow(), "golden_1_developer_flow")
+mlqube_style.publish(golden_path_diagrams.cleanup(), "golden_2_cleanup")

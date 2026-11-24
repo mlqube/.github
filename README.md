@@ -70,7 +70,7 @@ The platform is built for each test session and destroyed afterwards. When it ru
 | **Kyverno** | both | Policy engine: Pod Security baseline policies, Audit mode | [kyverno](docs/platform/gitops/kyverno.md) | ✅ tested live |
 | **metrics-server** | both | CPU and memory use for `kubectl top` and autoscaling | [metrics-server](docs/platform/gitops/metrics-server.md) | ✅ tested live |
 
-How each add-on is wired into Argo CD (projects, which clusters, conventions): [`clusters/mgmt`](docs/platform/gitops/clusters-mgmt.md). **Not built yet**, in roadmap order: Argo Workflows and Kueue, Capsule and the `Tenant` API, MLflow, KServe, Backstage, and observability ([roadmap](docs/roadmap.md), [Phase 1 plan](docs/phase-1-plan.md)).
+How each add-on is wired into Argo CD (projects, which clusters, conventions): [`clusters/mgmt`](docs/platform/gitops/clusters-mgmt.md). **Not built yet**, in roadmap order: Argo Workflows and Kueue, Capsule and the `Tenant` API, MLflow, KServe, Backstage, and observability ([roadmap](docs/roadmap.md), [Phase 1 plan](docs/phase-1-plan.md)). Next: [golden path v0](docs/golden-path-v0-plan.md), so an ML engineer can go from a feature branch to a registered model ([how it works](docs/golden-path.md)).
 
 ## Contributing
 
