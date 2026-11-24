@@ -16,7 +16,7 @@ For the full organizational case, including value for each stakeholder and resul
 
 MlQube is an **internal developer platform (IDP)** for a single organization, in which each **business unit is a tenant**. It runs on managed Kubernetes, starting with **Amazon EKS on AWS**. It gives ML practitioners self-service golden paths to **build, train, register and serve models**, and gives platform operators control over isolation, quotas, cost and upgrades.
 
-MlQube **assembles proven open-source projects** instead of reinventing them. Its own code is a thin glue layer:
+MlQube **assembles proven open-source projects** instead of reinventing them. Its own code is a thin glue layer ([the MlQube glue](glue.md)):
 
 - Higher-level platform resources (`Tenant`, `MLProject`, `Workspace`, `ModelDeployment`)
 - Developer portal templates and plugins

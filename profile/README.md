@@ -94,7 +94,7 @@ What is planned:
 | To ... | Read |
 |---|---|
 | **Understand why** | 💡 [Why an organization needs an ML platform](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md) · 📖 [Vision](https://github.com/mlqube/.github/blob/main/docs/vision.md) |
-| **See the design** | 🏗️ [Architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md) (six views, explained) · 📝 [Architecture decision records](https://github.com/mlqube/.github/blob/main/docs/adr/README.md) |
+| **See the design** | 🏗️ [Architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md) (six views, explained) · 🧩 [The MlQube glue](https://github.com/mlqube/.github/blob/main/docs/glue.md) (our code between the components) · 📝 [Architecture decision records](https://github.com/mlqube/.github/blob/main/docs/adr/README.md) |
 | **Follow the plan** | 🗺️ [Roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md) · ✅ [Phase 1 plan](https://github.com/mlqube/.github/blob/main/docs/phase-1-plan.md) (what's done, what's next) |
 | **See what runs today** | 🧩 [What runs in the clusters](https://github.com/mlqube/.github/blob/main/README.md#what-runs-in-the-clusters): every component, its cluster, its status and its page |
 | **Build and run it** | 🛠️ [Platform documentation](https://github.com/mlqube/.github/blob/main/docs/platform/README.md): [setup](https://github.com/mlqube/.github/blob/main/docs/platform/setup.md), [secrets](https://github.com/mlqube/.github/blob/main/docs/platform/secrets.md), [troubleshooting](https://github.com/mlqube/.github/blob/main/docs/platform/troubleshooting.md), and one page per Terraform layer and GitOps add-on |

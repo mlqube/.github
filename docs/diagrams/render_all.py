@@ -19,3 +19,10 @@ VIEWS = [
 for name in VIEWS:
     module = importlib.import_module(name)
     mlqube_style.publish(module.build(), module.NAME)
+
+# The glue pictures (docs/glue.md), same style
+import glue_diagrams  # noqa: E402
+
+mlqube_style.publish(glue_diagrams.overview(), "glue_1_overview")
+mlqube_style.publish(glue_diagrams.tenant(), "glue_2_tenant")
+mlqube_style.publish(glue_diagrams.apis(), "glue_3_apis")

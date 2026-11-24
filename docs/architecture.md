@@ -250,7 +250,7 @@ flowchart LR
 
 ## Platform APIs (the glue layer)
 
-MlQube adds a small set of high-level resources, implemented with Crossplane ([ADR-0006](adr/0006-platform-apis-with-crossplane.md)):
+MlQube adds a small set of high-level resources, implemented with Crossplane ([ADR-0006](adr/0006-platform-apis-with-crossplane.md)). What the glue is, how one request becomes a tenant, and who writes what: [the MlQube glue](glue.md).
 
 | Resource | Expands into |
 |---|---|
