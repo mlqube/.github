@@ -93,6 +93,11 @@ After fixing the cause, recreate the router: `platform` → `network` → `apply
 
 - **Cause:** an **organization** setting, not the key. **Fix:** GitHub → organization **Settings → Member privileges → Deploy keys** → allow, then run the command again.
 
+### Only the `root` app exists, OutOfSync: `resource argoproj.io:Application is not permitted in project bootstrap`
+
+- **Cause:** a file under `clusters/mgmt/` is a plain `Application`. The root app runs in project `bootstrap`, which may create only ApplicationSets, AppProjects and Secrets; Argo CD validates every resource before applying any, so one such file blocks all the add-ons. Seen on the 2026-11-24 build (Dex, fixed in mlqube/gitops#14).
+- **Fix:** make it an ApplicationSet with a one-element list generator ([conventions](gitops/clusters-mgmt.md)). Root retries on its own; `kubectl --context mgmt -n argocd get application root -o jsonpath='{.status.operationState.message}'` shows the reason.
+
 ### Single sign-on (Identity Center) fails
 
 | Symptom | Cause | Fix |
