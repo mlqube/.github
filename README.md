@@ -59,16 +59,16 @@ The platform is built for each test session and destroyed afterwards. When it ru
 
 | Component | Runs in | What it does | Docs | Status |
 |---|---|---|---|---|
-| **Argo CD** (GitOps hub) | mgmt | Deploys everything below to every cluster from the `gitops` repository; `https://argocd.mlqube.click` | [addons-mgmt](docs/platform/infrastructure/addons-mgmt.md) | ✅ tested live (sign-in through the standalone Dex: next build) |
-| **Dex** (identity broker) | mgmt | Single sign-on: IAM Identity Center (SAML) → every tool (OIDC); `https://dex.mlqube.click` | [dex](docs/platform/gitops/dex.md) | 🕓 written, first test at the next build |
+| **Argo CD** (GitOps hub) | mgmt | Deploys everything below to every cluster from the `gitops` repository; `https://argocd.mlqube.click` | [addons-mgmt](docs/platform/infrastructure/addons-mgmt.md) | ✅ tested live, including sign-in through Dex |
+| **Dex** (identity broker) | mgmt | Single sign-on: IAM Identity Center (SAML) → every tool (OIDC); `https://dex.mlqube.click` | [dex](docs/platform/gitops/dex.md) | ✅ tested live |
 | **AWS Load Balancer Controller** | both | Turns Ingresses into internal ALBs (TLS from ACM) | [aws-load-balancer-controller](docs/platform/gitops/aws-load-balancer-controller.md) | ✅ tested live |
 | **ExternalDNS** | both | Writes each cluster's names into the private zone `mlqube.click` | [external-dns](docs/platform/gitops/external-dns.md) | ✅ tested live |
 | **Karpenter** | both | Starts and stops nodes on demand: CPU (spot first) in both clusters | [karpenter](docs/platform/gitops/karpenter.md) | ✅ tested live |
-| **GPU nodes** + **NVIDIA device plugin** | wl-nonprod | Spot g6/g5 GPU nodes for ML jobs, tainted, scale to zero | [karpenter](docs/platform/gitops/karpenter.md#gpu-nodes-wl-nonprod) | 🕓 written, first test at the next build |
+| **GPU nodes** + **NVIDIA device plugin** | wl-nonprod | Spot g6/g5 GPU nodes for ML jobs, tainted, scale to zero | [karpenter](docs/platform/gitops/karpenter.md#gpu-nodes-wl-nonprod) | ✅ tested live |
 | **External Secrets Operator** | both | Copies secrets from AWS Secrets Manager (`mlqube/platform/*`) into Kubernetes Secrets | [external-secrets](docs/platform/gitops/external-secrets.md) | ✅ tested live |
 | **cert-manager** | both | TLS certificates inside the clusters, from each cluster's internal CA | [cert-manager](docs/platform/gitops/cert-manager.md) | ✅ tested live |
-| **Kyverno** | both | Policy engine: Pod Security baseline policies, Audit mode | [kyverno](docs/platform/gitops/kyverno.md) | 🕓 written, first test at the next build |
-| **metrics-server** | both | CPU and memory use for `kubectl top` and autoscaling | [metrics-server](docs/platform/gitops/metrics-server.md) | 🕓 written, first test at the next build |
+| **Kyverno** | both | Policy engine: Pod Security baseline policies, Audit mode | [kyverno](docs/platform/gitops/kyverno.md) | ✅ tested live |
+| **metrics-server** | both | CPU and memory use for `kubectl top` and autoscaling | [metrics-server](docs/platform/gitops/metrics-server.md) | ✅ tested live |
 
 How each add-on is wired into Argo CD (projects, which clusters, conventions): [`clusters/mgmt`](docs/platform/gitops/clusters-mgmt.md). **Not built yet**, in roadmap order: Argo Workflows and Kueue, Capsule and the `Tenant` API, MLflow, KServe, Backstage, and observability ([roadmap](docs/roadmap.md), [Phase 1 plan](docs/phase-1-plan.md)).
 

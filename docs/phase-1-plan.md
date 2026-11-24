@@ -56,21 +56,22 @@
 - [ ] A default-deny policy verified between two test namespaces
 - [x] Karpenter with a CPU NodePool per cluster (spot first)
 - [x] Karpenter scale test on both clusters, 2026-11-23: a 3-CPU pod got a spot node in about 40 s (mgmt `c8id.xlarge`, wl-nonprod `c8i-flex.xlarge`), removed about 2 min after the pod was deleted
-- [ ] GPU (spot) NodePool in `wl-nonprod`, tainted so only GPU work lands on it (written, g6/g5 within the quotas; to verify at the next build)
-- [ ] NVIDIA device plugin (written; to verify at the next build)
+- [x] GPU (spot) NodePool in `wl-nonprod`, tainted so only GPU work lands on it; verified 2026-11-24: a pod with `nvidia.com/gpu: 1` got a g6.xlarge (NVIDIA L4) in about 60 s and ran `nvidia-smi`; the node was removed after the pod was deleted. Spot had no g6/g5 capacity at that moment, so Karpenter fell back to on-demand as designed
+- [x] NVIDIA device plugin; verified 2026-11-24 (runs only on GPU nodes, advertises `nvidia.com/gpu`)
 - [ ] DCGM exporter for GPU metrics (with observability)
 - [x] AWS Load Balancer Controller, ExternalDNS
 - [x] cert-manager (in-cluster certificates only), internal CA `mlqube-internal-ca` per cluster; verified 2026-11-23 (test certificate issued)
 - [x] External Secrets Operator connected to AWS Secrets Manager; verified 2026-11-23 (test secret synced; another path denied by IAM; tenant-labelled namespace denied by the store)
-- [ ] Kyverno with the Pod Security baseline policies in Audit mode (written, mlqube/gitops#11; to verify at the next build); Enforce once the reports are clean
+- [x] Kyverno with the Pod Security baseline policies in Audit mode; verified 2026-11-24 (11 ValidatingPolicies Ready on both clusters; a privileged test pod ran and was reported as failing `disallow-privileged-containers`; no Helm test pods)
+- [ ] Kyverno policies to Enforce once the reports are clean
 - [ ] Required-labels policy (with the tenant label convention, Phase 2)
-- [ ] metrics-server (written; to verify at the next build)
+- [x] metrics-server; verified 2026-11-24 (`kubectl top nodes` on both clusters)
 
 ## 5. Identity ([ADR-0009](adr/0009-identity-provider.md))
 
 Mechanism changed by [ADR-0015](adr/0015-iam-identity-center-identity-hub.md): IAM Identity Center, SAML through Dex, access entries instead of an EKS OIDC provider.
 
-- [x] Argo CD sign-in through Identity Center (SAML app, Dex); `mlqube-platform-admins` → `role:admin`, everyone else no access; local admin off (`admin.enabled: false` verified 2026-11-23)
+- [x] Argo CD sign-in through Identity Center (SAML app, Dex); `mlqube-platform-admins` → `role:admin`, everyone else no access; local admin off (`admin.enabled: false` verified 2026-11-23); through the standalone Dex add-on verified 2026-11-24
 - [x] Group claim format checked: Identity Center sends group **IDs**; the ID is kept in SSM Parameter Store
 - [ ] Grafana sign-in the same way (with observability)
 - [x] `kubectl` through Identity Center roles and EKS access entries; CI and Argo CD through their own access entries
