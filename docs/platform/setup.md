@@ -19,6 +19,7 @@ Nothing here puts a secret in Git, in a workflow file or in chat: secrets go int
 | 9 | [CI access to the tailnet](#9-ci-access-to-the-tailnet) | Tailscale + GitHub | Secrets `TAILSCALE_CLIENT_ID`, `TAILSCALE_CLAIM` exist |
 | 10 | [Argo CD deploy key](#10-argo-cd-deploy-key) | Laptop + GitHub + SSM | Deploy key `argocd-mgmt` and parameter `/mlqube/argocd/gitops-deploy-key` exist |
 | 10b | [Argo CD single sign-on](#10b-argo-cd-single-sign-on-iam-identity-center) | Identity Center + SSM | SAML application assigned to `mlqube-platform-admins`; parameters `/mlqube/argocd/sso-url`, `/mlqube/argocd/sso-ca` and `/mlqube/argocd/sso-admin-group-id` exist |
+| 10c | [Argo CD GitHub App](#10c-argo-cd-github-app) | GitHub + SSM | App `mlqube-argocd` installed on all repositories; parameters `/mlqube/argocd/github-app-id`, `/mlqube/argocd/github-app-installation-id` and `/mlqube/argocd/github-app-private-key` exist |
 | 11 | [First platform build](#11-first-platform-build-and-checks) | GitHub Actions | Argo CD apps Synced and Healthy |
 
 ## 1. Tools on your laptop
@@ -198,6 +199,30 @@ ids=$(aws sso-admin list-instances --profile mlqube --region us-west-2 --query "
 ```
 
 Terraform maps that group ID to Argo CD's `role:admin`; everyone else gets no access.
+
+## 10c. Argo CD GitHub App
+
+Argo CD reads `mlqube/xrd-tenancy` and every `mlqube/tenant-<id>` repository, and lists the organization's `tenant-*` repositories, through a **GitHub App** ([ADR-0018](../adr/0018-tenancy-through-crossplane-and-tenant-repos.md)). Deploy keys would need a manual step for every new tenant.
+
+1. GitHub → **mlqube organization → Settings → Developer settings → GitHub Apps → New GitHub App**. Name `mlqube-argocd`; homepage URL `https://argocd.mlqube.click`; **Webhook: Active off**.
+2. **Repository permissions:** Contents **Read-only**, Metadata **Read-only** (added automatically). Nothing else; no events. **Where can this app be installed:** Only on this account. Create.
+3. On the App's page: note the **App ID**; **Generate a private key** (a `.pem` file downloads).
+4. **Install App** → `mlqube` → **All repositories** (new tenant repositories are then covered without changes). The installation ID is the number at the end of the installation's settings URL (`.../settings/installations/<id>`).
+5. Store the three values in Parameter Store: the key as **SecureString**, the IDs as String. Then delete the downloaded `.pem`.
+
+```bash
+aws ssm put-parameter --name /mlqube/argocd/github-app-id --type String --value "<App ID>" --profile mlqube --region us-west-2
+```
+
+```bash
+aws ssm put-parameter --name /mlqube/argocd/github-app-installation-id --type String --value "<installation ID>" --profile mlqube --region us-west-2
+```
+
+```bash
+aws ssm put-parameter --name /mlqube/argocd/github-app-private-key --type SecureString --value file://<downloaded-key>.pem --profile mlqube --region us-west-2
+```
+
+Terraform (`addons-mgmt`, `github_app.tf`) turns them into the credentials template `argocd/repo-creds-mlqube` for `https://github.com/mlqube`.
 
 ## 11. First platform build and checks
 

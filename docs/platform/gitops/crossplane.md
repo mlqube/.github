@@ -16,7 +16,7 @@ It runs in **mgmt only**, as an Argo CD app like the other add-ons, and reaches 
 | **Providers** | Plug-ins that manage one kind of external system, each object a *managed resource* | provider-kubernetes; provider-aws-iam, -s3, -ecr, -secretsmanager, -eks (with provider-family-aws) |
 | **Functions** | Steps a Composition runs to render its resources | function-go-templating, function-auto-ready |
 | **ClusterProviderConfigs** | How a provider signs in | `default` (AWS, Pod Identity); `wl-nonprod` (provider-kubernetes) |
-| **XRDs and Compositions** | Our APIs and their logic | Next step: repository `mlqube/xrd-tenancy`; the requests in one `tenant-<id>` repository per tenant ([ADR-0018](../../adr/0018-tenancy-through-crossplane-and-tenant-repos.md)) |
+| **XRDs and Compositions** | Our APIs and their logic | Repository `mlqube/xrd-tenancy` (`Tenant`, `MLProject`), applied by `mgmt-crossplane-tenancy` ([`tenancy-applicationset.yaml`](https://github.com/mlqube/gitops/blob/main/clusters/mgmt/crossplane/tenancy-applicationset.yaml)); the requests in one `tenant-<id>` repository per tenant, applied by the [`tenants` ApplicationSets](https://github.com/mlqube/gitops/tree/main/clusters/mgmt/tenants) ([ADR-0018](../../adr/0018-tenancy-through-crossplane-and-tenant-repos.md)) |
 
 ## What exists, and who creates it
 
@@ -96,7 +96,7 @@ kubectl --context mgmt get managedresourcedefinitions | grep -c Active   # only 
 
 ## Destroy
 
-Nothing in this step creates AWS resources. Once the glue creates tenants, the destroy workflow deletes the tenant Applications and waits until no `Tenant` is left **before** it destroys the add-ons layer; otherwise their AWS resources would stay behind. Buckets and ECR repositories are kept on purpose (`deletionPolicy: Orphan`) and taken back over by the next build ([ADR-0018](../../adr/0018-tenancy-through-crossplane-and-tenant-repos.md)).
+The tenants' AWS resources exist only while Crossplane does, so the destroy workflow removes them **first**. Its step *Delete the tenants* (`terraform-layer.yml`, on `addons-mgmt` destroy) stops the ApplicationSet controller, deletes the Applications labelled `mlqube/tenant-app`, then every `Tenant` and `MLProject`, and waits up to 30 minutes until no tenant namespace is left in mgmt. A namespace only goes once every managed resource in it is gone from AWS. If something is still left after the wait, the destroy stops before touching the add-ons; check `kubectl get managed -A` and the providers' logs, then run it again. Buckets and ECR repositories are kept on purpose (no `Delete` in their `managementPolicies`) and taken back over by the next build ([ADR-0018](../../adr/0018-tenancy-through-crossplane-and-tenant-repos.md)).
 
 ## Related
 

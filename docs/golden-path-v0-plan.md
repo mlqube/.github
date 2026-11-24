@@ -26,10 +26,10 @@
 ## 2. Tenants through the glue ([ADR-0018](adr/0018-tenancy-through-crossplane-and-tenant-repos.md))
 
 - [x] Crossplane in mgmt: engine, providers (AWS, Kubernetes), functions, their access; boundary `mlqube-boundary-tenant` ([Crossplane](platform/gitops/crossplane.md); not tested live)
-- [ ] Repository `mlqube/xrd-tenancy`: XRDs and Compositions for `Tenant` and `MLProject`, examples, CI render tests
-- [ ] `gitops`: ApplicationSet for `xrd-tenancy` (mgmt); ApplicationSet with the SCM provider generator for `tenant-*` repositories; Argo CD project `tenants`
-- [ ] GitHub App `mlqube-argocd` (read all repositories) and Argo CD's credentials template for `https://github.com/mlqube` (Terraform, key from Parameter Store). *By hand, once: create the GitHub App.*
-- [ ] Destroy workflow: delete the tenant Applications and wait until no `Tenant` is left, before the add-ons layer
+- [x] Repository `mlqube/xrd-tenancy`: XRDs and Compositions for `Tenant` and `MLProject`, examples, CI render tests (render CI green; not tested live)
+- [ ] `gitops`: ApplicationSet for `xrd-tenancy` (mgmt); ApplicationSets with the SCM provider generator for `tenant-*` repositories (one app for `tenant.yaml`, one for `projects/`); Argo CD project `tenants` (written)
+- [ ] GitHub App `mlqube-argocd` (read all repositories) and Argo CD's credentials template for `https://github.com/mlqube` (Terraform `github_app.tf`, key from Parameter Store; [setup step 10c](platform/setup.md#10c-argo-cd-github-app)). The App is created and installed; Terraform written
+- [ ] Destroy workflow: delete the tenant Applications, Tenants and MLProjects and wait until no tenant namespace is left in mgmt, before the add-ons layer (written)
 - [ ] Repository `mlqube/tenant-retail-1042` with `tenant.yaml` and `projects/churn.yaml`, made by the platform team (Backstage does it from section 6)
 - [ ] **Test:** the tenant and project appear in wl-nonprod (namespace, queues, ServiceAccounts, RBAC) and AWS (role, bucket, ECR repository, CI role, secret); a second build takes the bucket and ECR repository back over
 

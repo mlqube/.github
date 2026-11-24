@@ -64,7 +64,7 @@ tenant-retail-1042/
 ```
 
 - **Created by Backstage** from the "New tenant" form ([golden path v0 plan](../golden-path-v0-plan.md), section 6). Until Backstage exists, the platform team creates it with the same files: the same path, without the form.
-- **Discovered by Argo CD:** an ApplicationSet with the SCM provider generator scans the `mlqube` organization for repositories named `tenant-*` and creates one Application each (`tenant-<id>`), in a new Argo CD project **`tenants`**: only these repositories, only mgmt, only namespaces `tenant-*`, only the kinds `Tenant` and `MLProject`.
+- **Discovered by Argo CD:** an ApplicationSet with the SCM provider generator scans the `mlqube` organization for repositories named `tenant-*` and creates Applications for each, in a new Argo CD project **`tenants`**: only these repositories, only mgmt, only namespaces `tenant-*`, only the kinds `Tenant` and `MLProject`. There are two Applications per repository: `tenant-<id>` for `tenant.yaml`, and `tenant-<id>-projects` for `projects/`. The projects go into the namespace the `Tenant` creates, and Argo CD refuses a whole sync while a target namespace is missing, so they sync on their own and retry until it exists (implementation note, 2026-11-24).
 - **Crossplane builds** everything else, from mgmt, in wl-nonprod and AWS.
 
 ### 4. Customers get read access to their repository
@@ -86,7 +86,7 @@ Created by hand in GitHub's settings (it can't be scripted), once. Private keys 
 
 ### 6. Data survives a destroy; everything else is rebuilt
 
-- The **S3 bucket and ECR repositories** have Crossplane's `deletionPolicy: Orphan`: deleting a `Tenant` or `MLProject`, including at destroy, leaves them, and the next build takes them back over by name. Models, data and images stay between sessions (what ADR-0016 wanted from the base layer).
+- The **S3 bucket and ECR repositories** are kept by Crossplane (no `Delete` in their `managementPolicies`; namespaced managed resources in Crossplane v2 have no `deletionPolicy`): deleting a `Tenant` or `MLProject`, including at destroy, leaves them, and the next build takes them back over by name. Models, data and images stay between sessions (what ADR-0016 wanted from the base layer).
 - Roles, policies, secrets, Pod Identity associations and Kubernetes objects are deleted with their `Tenant`/`MLProject` and recreated by the next build.
 - **The destroy workflow deletes the tenants first** (the tenant Applications, then waits until every `Tenant` is gone) before it destroys the add-ons layer. Otherwise their AWS resources would be left behind.
 - Offboarding a tenant leaves its bucket and repositories for the platform team to remove after the retention period.
