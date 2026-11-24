@@ -25,7 +25,7 @@ Use **Crossplane** in the management cluster, with the AWS provider and the Kube
 | `Workspace` | Notebook/IDE instance with storage and GPU limits |
 | `ModelDeployment` | KServe InferenceService, route, autoscaling, canary policy, dashboards |
 
-Backstage templates create these resources by committing them to Git, and Argo CD applies them.
+Backstage templates create these resources by committing them to Git, and Argo CD applies them. The design in detail, with diagrams: [the MlQube glue](../glue.md).
 
 ## Consequences
 

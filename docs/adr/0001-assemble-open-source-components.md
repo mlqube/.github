@@ -15,7 +15,7 @@ MlQube must provide workspaces, training, a model registry, serving, CI/CD and a
 
 ## Decision
 
-Option 2: **assemble OSS components with a thin MlQube glue layer.** Components are adopted individually (e.g. KServe, Kubeflow Trainer, Notebooks), not as one monolithic distribution.
+Option 2: **assemble OSS components with a thin MlQube glue layer** ([the MlQube glue](../glue.md)). Components are adopted individually (e.g. KServe, Kubeflow Trainer, Notebooks), not as one monolithic distribution.
 
 ## Consequences
 

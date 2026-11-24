@@ -21,7 +21,7 @@ This is the special `.github` repository for the **MlQube** organization.
 
 📐 **Main architecture diagram:** [full enterprise view (PNG)](docs/diagrams/mlqube_5_enterprise.png) · [SVG](docs/diagrams/mlqube_5_enterprise.svg). The diagram above is the high-level view; the [architecture document](docs/architecture.md#enterprise-view) walks through all six views step by step.
 
-MlQube is an internal developer platform for ML/AI on Kubernetes, used by one organization. It **assembles proven open-source components** and adds a thin MlQube glue layer for tenancy, golden paths and cost. What is planned:
+MlQube is an internal developer platform for ML/AI on Kubernetes, used by one organization. It **assembles proven open-source components** and adds a thin layer of its own code, [the MlQube glue](docs/glue.md), for tenancy, golden paths and cost. What is planned:
 
 - **Cloud and infrastructure:** AWS and Amazon EKS, provisioned with Terraform. One VPC per environment, private subnets only.
 - **Hub-and-spoke clusters:**
@@ -31,7 +31,7 @@ MlQube is an internal developer platform for ML/AI on Kubernetes, used by one or
   - **Karpenter NodePools** in each workload cluster: CPU, gVisor-sandboxed CPU, GPU dedicated per tenant (spot for training) and GPU inference.
 - **Tenancy:** each business unit is a tenant, named `<businessunit_name>-<businessunitid>` (e.g. `retail-1042`). All tenants share the clusters in one tier, isolated with Capsule namespaces, quotas, default-deny network policies, Kyverno and a per-tenant IAM role through EKS Pod Identity.
 - **Identity:** single sign-on through **AWS IAM Identity Center**, the identity hub. Tools sign people in with SAML (through Dex where needed); `kubectl` goes through Identity Center roles and EKS access entries. Groups per tenant (`mlqube-<tenant>-admins`, `-developers`, `-viewers`) decide what each person can do. Workloads never use static cloud keys.
-- **Platform APIs:** `Tenant`, `MLProject`, `Workspace` and `ModelDeployment`, requested through Backstage and reconciled by Crossplane into S3 buckets, IAM roles, ECR repositories and namespaces.
+- **Platform APIs:** `Tenant`, `MLProject`, `Workspace` and `ModelDeployment`, requested through Backstage and reconciled by Crossplane into S3 buckets, IAM roles, ECR repositories and namespaces ([the glue](docs/glue.md)).
 - **Model lifecycle:** develop in a notebook → train on a tenant GPU node → track and register in MLflow (metadata in RDS PostgreSQL, artifacts in S3 under a prefix per tenant) → test on a staging endpoint → promote through a GitOps PR → Argo CD rolls out a KServe canary in prod.
 - **Shared AWS services:** S3, ECR, RDS PostgreSQL (Multi-AZ), Secrets Manager (through External Secrets), Route 53, ACM and the AWS Load Balancer Controller.
 - **Governance and FinOps:** Kyverno policies in every cluster, audit and lineage, and showback/chargeback per business unit with OpenCost.
