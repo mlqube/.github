@@ -59,7 +59,7 @@ Backstage and MLflow each need PostgreSQL. **In v0 it runs in the management clu
 
 ### 6. Images: ECR in the same account and region, in the base layer
 
-- One repository per project, `mlqube/tenants/<tenant>/<project>`, in **us-west-2**, created by the project's `MLProject` and kept on destroy (Crossplane `deletionPolicy: Orphan`), so images stay between sessions ([ADR-0018](0018-tenancy-through-crossplane-and-tenant-repos.md); originally the base layer).
+- One repository per project, `mlqube/tenants/<tenant>/<project>`, in **us-west-2**, created by the project's `MLProject` and kept on destroy (no `Delete` in its Crossplane `managementPolicies`), so images stay between sessions ([ADR-0018](0018-tenancy-through-crossplane-and-tenant-repos.md); originally the base layer).
 - **Push:** a GitHub OIDC role per project (`mlqube-tenant-<tenant>-<project>-ci`, created by the glue), allowed to push only to its repository. No keys.
 - **Pull:** the EKS nodes' existing read-only ECR permission. Over the NAT gateway today; VPC endpoints for ECR and S3 later (cheaper for large images).
 - Tags immutable (every tag carries a commit SHA), scan on push, the lifecycle rules above.
