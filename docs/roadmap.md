@@ -19,6 +19,7 @@
 - Feature store (e.g. Feast)
 - Model evaluation, guardrails and drift monitoring
 - Model caching and warm pools for very large LLMs
+- AI assistance in the platform: CI failure triage, a PR reviewer, an assistant in Backstage, failed-job explanations ([ADR-0017](adr/0017-ai-assistance-in-the-platform.md), parked)
 
 ## Key risks
 
