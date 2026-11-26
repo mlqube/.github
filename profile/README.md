@@ -1,104 +1,74 @@
 # MlQube
 
-**A Kubernetes-native internal developer platform for ML and AI teams.**
+**An internal developer platform for ML and AI teams on Amazon EKS: self-service GPU training, a model registry and serving, one tenant per business unit.**
 
-MlQube lets ML engineers and data scientists **build, train, register and serve models** themselves, with no need to become Kubernetes experts. It is built from proven open-source projects and adds a thin layer for multi-tenancy, golden paths and cost visibility.
+Designed and built end to end by **[Dilip Kumar Samanta](https://www.linkedin.com/in/dilipsamanta/)**: architecture, Terraform, GitOps, identity, tenancy and docs.
 
-**[Why](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md)** · **[Vision](https://github.com/mlqube/.github/blob/main/docs/vision.md)** · **[Architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md)** · **[Roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md)** · **[Decisions (ADRs)](https://github.com/mlqube/.github/blob/main/docs/adr/README.md)** · **[Platform docs](https://github.com/mlqube/.github/blob/main/docs/platform/README.md)** · **[What runs today](https://github.com/mlqube/.github/blob/main/README.md#what-runs-in-the-clusters)**
+![Phase 1](https://img.shields.io/badge/Phase%201-tested%20live%20Nov%202026-2ea44f) ![Next](https://img.shields.io/badge/next-golden%20path%20v0-0969da) ![ADRs](https://img.shields.io/badge/architecture%20decisions-17-6f42c1) ![AWS](https://img.shields.io/badge/AWS-EKS-ff9900) ![IaC](https://img.shields.io/badge/IaC-Terraform-7b42bc) ![GitOps](https://img.shields.io/badge/GitOps-Argo%20CD-ef7b4d)
 
-> **Status:** 🏗️ **Phase 1, the AWS foundation, is being built**, in the open. The reference platform (two EKS clusters, the GitOps hub and the base add-ons) is created from code for each test session and destroyed afterwards. Not ready for production. Progress: [Phase 1 plan](https://github.com/mlqube/.github/blob/main/docs/phase-1-plan.md) · [what runs in the clusters](https://github.com/mlqube/.github/blob/main/README.md#what-runs-in-the-clusters).
+**[Architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md)** · **[Decisions](https://github.com/mlqube/.github/blob/main/docs/adr/README.md)** · **[What runs today](https://github.com/mlqube/.github/blob/main/README.md#what-runs-in-the-clusters)** · **[Roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md)** · **[Platform docs](https://github.com/mlqube/.github/blob/main/docs/platform/README.md)**
 
 ---
 
-## Why MlQube?
+## What runs today
 
-ML teams lose a lot of time on infrastructure: GPU quotas, CUDA images, distributed training setup, serving stacks, model promotion and cost tracking. Platform teams end up rebuilding the same tooling again and again.
+Phase 1 was built and tested live in November 2026. The whole platform is created from code for each working session and destroyed afterwards.
 
-### Why does an organization need this?
+- **Two private EKS clusters**, management and non-prod, in their own VPCs with no public subnets. They are built and destroyed **only from GitHub Actions**, never from a laptop.
+- **One Argo CD in the management cluster** deploys about a dozen add-ons to both clusters from Git. The workload clusters run no Argo CD of their own.
+- **Nodes on demand with Karpenter:** a spot CPU node in about 40 s. **NVIDIA L4 GPU nodes** come up in about 60 s and are removed once the work is done.
+- **Single sign-on** for people through AWS IAM Identity Center and Dex. Workloads use EKS Pod Identity. **No static cloud keys** anywhere.
+- **CI reaches the private cluster APIs** over Tailscale with workload identity federation, so no secret is stored for it.
+- **Platform services:** internal load balancers with private DNS and TLS, secrets from AWS Secrets Manager, and Kyverno policies.
 
-- ⏱️ **Models get stuck before production.** Without standard paths, every deployment is a custom project, and AI initiatives stall after the pilot.
-- 💸 **GPUs are expensive and poorly used.** Some sit idle while other teams wait; costs can't be attributed to teams or business units.
-- 🔁 **Every team rebuilds the same stack.** Duplicated training, serving and CI tooling leads to inconsistent quality and wasted effort.
-- 🛡️ **Governance gaps.** No clear lineage from data to deployed model; shadow infrastructure creates security and compliance risk.
-- 🎫 **Platform teams become bottlenecks.** Engineers spend their time on tickets instead of improving the platform.
+[![MlQube: high-level architecture](https://raw.githubusercontent.com/mlqube/.github/main/docs/diagrams/mlqube_1_overview.png)](https://github.com/mlqube/.github/blob/main/docs/architecture.md)
 
-An ML platform turns infrastructure into **self-service golden paths**. ML teams ship faster, platform teams keep control, and finance can see where the money goes. 👉 [Read the full case](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md)
+<sub>The [architecture document](https://github.com/mlqube/.github/blob/main/docs/architecture.md) walks through six views: identity, the management cluster, a model's path from code to a canary in prod, and GitOps hub and spoke.</sub>
 
-MlQube aims to provide:
+## Engineering highlights
 
-- 🧑‍💻 **Self-service workspaces.** GPU notebooks and IDEs with sensible images and quotas.
-- 🐍 **Write Python, run it as a job.** ML code runs as Argo Workflows jobs and pipelines through a simple Python SDK, with no YAML.
-- 🏋️ **Training at scale.** GPU jobs that queue fairly and scale to zero when idle.
-- 📦 **Model registry and promotion.** Versioned models that move Dev → Staging → Prod through reviewed, auditable changes.
-- 🚀 **Model serving.** Autoscaled endpoints for classic ML and LLMs, with canary rollouts.
-- 🏢 **Business units as tenants.** Each business unit gets isolation, quotas and its own cost visibility.
-- 🧭 **One front door.** A developer portal with templates, a model catalog and usage dashboards.
+The parts that took the most thought, each with its write-up:
 
-## The golden path
-
-```mermaid
-flowchart LR
-    A[Create project<br/>from template] --> B[Explore in<br/>GPU notebook]
-    B --> C[Run training<br/>pipeline]
-    C --> D[Register model<br/>in registry]
-    D --> E[Promote → GitOps PR]
-    E --> F[Serve endpoint<br/>canary → prod]
-    F --> G[Observe latency,<br/>GPU use & cost]
-```
-
-## Architecture at a glance
-
-[![MlQube: high-level architecture](https://raw.githubusercontent.com/mlqube/.github/main/docs/diagrams/mlqube_1_overview.png)](https://github.com/mlqube/.github/blob/main/docs/architecture.md#enterprise-view)
-
-📐 **Main architecture diagram:** [full view, explained](https://github.com/mlqube/.github/blob/main/docs/architecture.md#5-full-view) · [SVG to zoom](https://github.com/mlqube/.github/blob/main/docs/diagrams/mlqube_5_enterprise.svg). The [architecture document](https://github.com/mlqube/.github/blob/main/docs/architecture.md#enterprise-view) walks through all six views step by step.
-
-What is planned:
-
-- ☁️ **AWS and Amazon EKS**, built with Terraform: one VPC per environment, private subnets only.
-- 🕸️ **Hub-and-spoke clusters.** A **management cluster** runs the platform itself: Argo CD (GitOps hub), Crossplane (platform APIs), Backstage (portal), one shared MLflow and central observability. A **non-prod cluster** runs notebooks, training jobs and staging endpoints. A **prod cluster** serves models with KServe (vLLM for LLMs) and runs scheduled retraining.
-- ⚡ **Elastic compute** with Karpenter: CPU, gVisor-sandboxed CPU, GPU dedicated per tenant (spot for training) and GPU inference.
-- 🏢 **One tenant per business unit**, e.g. `retail-1042`, isolated with Capsule, quotas, default-deny network policies, Kyverno and a per-tenant IAM role.
-- 🔐 **Single sign-on** through AWS IAM Identity Center and groups per tenant (`mlqube-<tenant>-admins`, `-developers`, `-viewers`); workloads never use static cloud keys.
-- 🔄 **Model lifecycle:** train on a tenant GPU node → register in MLflow → test on a staging endpoint → promote through a GitOps PR → KServe canary in prod.
-- 💰 **Governance and FinOps:** policies in every cluster, audit and lineage, and cost showback / chargeback per business unit with OpenCost.
-
-| View | Shows |
+| | |
 |---|---|
-| [1. High-level architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md#1-high-level-architecture) | The building blocks and how they relate |
-| [2. Identity](https://github.com/mlqube/.github/blob/main/docs/architecture.md#2-identity-authentication-and-authorization) | How people are authenticated and authorized, and how workloads get cloud access |
-| [3. Management cluster and shared services](https://github.com/mlqube/.github/blob/main/docs/architecture.md#3-management-cluster-and-shared-services) | What runs in the management cluster and how it uses shared AWS services |
-| [4. Training, testing and serving](https://github.com/mlqube/.github/blob/main/docs/architecture.md#4-training-testing-and-serving) | One model's path from Python code to a canary in prod |
-| [5. Full view](https://github.com/mlqube/.github/blob/main/docs/architecture.md#5-full-view) | All parts joined together |
-| [6. GitOps hub and spoke](https://github.com/mlqube/.github/blob/main/docs/architecture.md#6-gitops-hub-and-spoke) | One Argo CD in the management cluster deploys to every cluster; workload clusters run no Argo CD |
+| **A platform that exists only when needed** | GPUs and EKS cost money even when idle, so the platform is rebuilt for each session. Build and destroy run in dependency order, with guard rails that refuse to destroy a layer something still depends on. Before the clusters go, anything the add-ons created in AWS is removed: nodes, load balancers and tenants. [Platform workflow](https://github.com/mlqube/.github/blob/main/docs/platform/README.md) |
+| **Private by default, and CI can still deploy** | The cluster APIs aren't public. GitHub Actions joins the tailnet as a short-lived device with workload identity federation and deploys over private routes. [ADR-0011](https://github.com/mlqube/.github/blob/main/docs/adr/0011-private-access-reference-build.md) · [ADR-0014](https://github.com/mlqube/.github/blob/main/docs/adr/0014-ci-access-to-private-clusters.md) |
+| **GitOps hub and spoke** | One Argo CD deploys to every cluster. Argo CD projects fence what each set of Applications may touch: which repositories, which namespaces, and which cluster-wide kinds. [GitOps hub](https://github.com/mlqube/.github/blob/main/docs/architecture.md#6-gitops-hub-and-spoke) |
+| **One identity hub** | People sign in through IAM Identity Center (SAML), and Dex hands every tool an OIDC login with the user's groups. [ADR-0015](https://github.com/mlqube/.github/blob/main/docs/adr/0015-iam-identity-center-identity-hub.md) · [sign-in flow](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/dex.md) |
+| **Tenancy as an API** | A business unit is a `Tenant`; its ML projects are `MLProject`s. Crossplane turns them into namespaces, Kueue GPU quotas, IAM roles, S3 buckets, ECR repositories and CI roles. Its AWS permissions are fenced to tenant-named resources under a permissions boundary. Each tenant's request lives in its own Git repository, which Argo CD discovers automatically. Written and render-tested in CI; first live test with golden path v0. [The glue](https://github.com/mlqube/.github/blob/main/docs/glue.md) · [ADR-0018](https://github.com/mlqube/.github/blob/main/docs/adr/0018-tenancy-through-crossplane-and-tenant-repos.md) |
+| **Fair GPU sharing** | Kueue queues jobs per tenant within its GPU quota. Runs from `main` preempt feature-branch runs, and idle quota is lent to other tenants. Written; first live test with golden path v0. [Kueue](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/kueue.md) |
 
-## Built on open source
+## How it's built
 
-✅ = in the reference build today, linked to its page; the rest is planned ([roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md)).
+- **Decisions are written down first:** 17 [architecture decision records](https://github.com/mlqube/.github/blob/main/docs/adr/README.md), each with the options considered and the consequences.
+- **Everything as code:** Terraform for AWS, Argo CD for Kubernetes, Crossplane Compositions with render tests in CI, and diagrams generated from Python.
+- **Safety nets:** every change goes through a pull request, with pre-commit checks, secret scanning (gitleaks), Terraform plans in CI, and every chart and provider version pinned.
+- **Docs an operator can follow:** [setup](https://github.com/mlqube/.github/blob/main/docs/platform/setup.md), [secrets and rotation](https://github.com/mlqube/.github/blob/main/docs/platform/secrets.md), [troubleshooting](https://github.com/mlqube/.github/blob/main/docs/platform/troubleshooting.md), and one page per Terraform layer and add-on.
 
-| Area | Projects |
+## Where it's going
+
+| | |
 |---|---|
-| Cloud & infrastructure | AWS: ✅ [Amazon EKS](https://github.com/mlqube/.github/blob/main/docs/platform/infrastructure/eks-mgmt.md), S3, ECR, RDS (first) · ✅ [Terraform](https://github.com/mlqube/.github/blob/main/docs/platform/infrastructure/README.md) |
-| Cloud & networking | ✅ [AWS Load Balancer Controller](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/aws-load-balancer-controller.md) (internal ALBs), ✅ [ExternalDNS](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/external-dns.md) (private DNS) |
-| Portal | Backstage |
-| GitOps & platform APIs | ✅ [Argo CD](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/README.md) (hub and spoke), Crossplane |
-| Scheduling & quotas | ✅ [Karpenter](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/karpenter.md) (CPU and GPU nodes), ✅ [NVIDIA device plugin](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/karpenter.md#gpu-nodes-wl-nonprod), Kueue |
-| ML jobs & pipelines | Argo Workflows + Hera (Python SDK) |
-| Distributed training | Kubeflow Trainer, KubeRay |
-| Tracking & registry | MLflow |
-| Serving | KServe, vLLM, KEDA |
-| Identity, tenancy & policy | ✅ AWS IAM Identity Center (SSO through [Dex](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/dex.md)), ✅ [Kyverno](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/kyverno.md), ✅ [External Secrets](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/external-secrets.md), ✅ [cert-manager](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/cert-manager.md), Capsule, gVisor |
-| Observability & cost | ✅ [metrics-server](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/metrics-server.md), Prometheus, Grafana, OpenTelemetry, OpenCost |
+| ✅ **Done** | Phase 1, the AWS foundation: clusters, GitOps, nodes on demand (CPU and GPU), single sign-on, secrets, policies |
+| 🔨 **Now** | [Golden path v0](https://github.com/mlqube/.github/blob/main/docs/golden-path-v0-plan.md): tenants through Crossplane, then an ML engineer goes from a feature branch to a GPU training run to a registered model in MLflow ([how it works](https://github.com/mlqube/.github/blob/main/docs/golden-path.md)) |
+| 🗺️ **Next** | Model serving with KServe and vLLM, promotion through GitOps, the Backstage portal, and cost per business unit with OpenCost ([roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md)) |
 
-## Documentation map
+<details>
+<summary><b>Why an ML platform at all?</b></summary>
 
-| To ... | Read |
-|---|---|
-| **Understand why** | 💡 [Why an organization needs an ML platform](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md) · 📖 [Vision](https://github.com/mlqube/.github/blob/main/docs/vision.md) |
-| **See the design** | 🏗️ [Architecture](https://github.com/mlqube/.github/blob/main/docs/architecture.md) (six views, explained) · 🧩 [The MlQube glue](https://github.com/mlqube/.github/blob/main/docs/glue.md) (our code between the components) · 📝 [Architecture decision records](https://github.com/mlqube/.github/blob/main/docs/adr/README.md) |
-| **Follow the plan** | 🗺️ [Roadmap](https://github.com/mlqube/.github/blob/main/docs/roadmap.md) · ✅ [Phase 1 plan](https://github.com/mlqube/.github/blob/main/docs/phase-1-plan.md) (what's done, what's next) · 🛤️ [Golden path v0 plan](https://github.com/mlqube/.github/blob/main/docs/golden-path-v0-plan.md) |
-| **Work on it as an ML engineer** | 🧑‍💻 [The golden path](https://github.com/mlqube/.github/blob/main/docs/golden-path.md): feature branch → your own test run → merge → official run and registered model (planned) |
-| **See what runs today** | 🧩 [What runs in the clusters](https://github.com/mlqube/.github/blob/main/README.md#what-runs-in-the-clusters): every component, its cluster, its status and its page |
-| **Build and run it** | 🛠️ [Platform documentation](https://github.com/mlqube/.github/blob/main/docs/platform/README.md): [setup](https://github.com/mlqube/.github/blob/main/docs/platform/setup.md), [secrets](https://github.com/mlqube/.github/blob/main/docs/platform/secrets.md), [troubleshooting](https://github.com/mlqube/.github/blob/main/docs/platform/troubleshooting.md), and one page per Terraform layer and GitOps add-on |
-| **Sign in** | 🔐 [Single sign-on through Dex](https://github.com/mlqube/.github/blob/main/docs/platform/gitops/dex.md) (with the sign-in flow diagram) |
+ML teams lose time on infrastructure: GPU quotas, CUDA images, training setup, serving stacks, model promotion and cost tracking. Without standard paths every deployment is a custom project, GPUs sit idle while other teams wait, and costs can't be traced to a business unit. MlQube turns that into **self-service golden paths**: ML teams ship faster, the platform team keeps control, and finance sees where the money goes. [The full case](https://github.com/mlqube/.github/blob/main/docs/why-an-ml-idp.md) · [vision](https://github.com/mlqube/.github/blob/main/docs/vision.md)
 
-Ideas and feedback are welcome. Please open an issue in this repository.
+</details>
+
+<details>
+<summary><b>Built on open source</b></summary>
+
+Amazon EKS · Terraform · Argo CD · Karpenter · Kueue · Crossplane · Dex · Kyverno · External Secrets · cert-manager · AWS Load Balancer Controller · ExternalDNS · Argo Workflows + Hera. Planned: MLflow · KServe · vLLM · Backstage · Capsule · Prometheus · Grafana · OpenCost. Status of each one: [what runs in the clusters](https://github.com/mlqube/.github/blob/main/README.md#what-runs-in-the-clusters).
+
+</details>
+
+## About
+
+I design and build platforms on Kubernetes and AWS. MlQube is my reference build: every decision, diagram and runbook is public here. The Terraform and GitOps code is in private repositories; I'm happy to walk through it.
+
+**[Connect on LinkedIn](https://www.linkedin.com/in/dilipsamanta/)** · questions and feedback: [open an issue](https://github.com/mlqube/.github/issues)
