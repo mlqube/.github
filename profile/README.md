@@ -2,7 +2,7 @@
 
 **An internal developer platform for ML and AI teams on Amazon EKS: self-service GPU training, a model registry and serving, one tenant per business unit.**
 
-Designed and built end to end by **[YOUR NAME](https://www.linkedin.com/in/YOUR-LINKEDIN/)**: architecture, Terraform, GitOps, identity, tenancy and docs.
+Designed and built end to end by **[Dilip Kumar Samanta](https://www.linkedin.com/in/dilipsamanta/)**: architecture, Terraform, GitOps, identity, tenancy and docs.
 
 ![Phase 1](https://img.shields.io/badge/Phase%201-tested%20live%20Nov%202026-2ea44f) ![Next](https://img.shields.io/badge/next-golden%20path%20v0-0969da) ![ADRs](https://img.shields.io/badge/architecture%20decisions-17-6f42c1) ![AWS](https://img.shields.io/badge/AWS-EKS-ff9900) ![IaC](https://img.shields.io/badge/IaC-Terraform-7b42bc) ![GitOps](https://img.shields.io/badge/GitOps-Argo%20CD-ef7b4d)
 
@@ -71,4 +71,4 @@ Amazon EKS · Terraform · Argo CD · Karpenter · Kueue · Crossplane · Dex ·
 
 I design and build platforms on Kubernetes and AWS. MlQube is my reference build: every decision, diagram and runbook is public here. The Terraform and GitOps code is in private repositories; I'm happy to walk through it.
 
-**[Connect on LinkedIn](https://www.linkedin.com/in/YOUR-LINKEDIN/)** · questions and feedback: [open an issue](https://github.com/mlqube/.github/issues)
+**[Connect on LinkedIn](https://www.linkedin.com/in/dilipsamanta/)** · questions and feedback: [open an issue](https://github.com/mlqube/.github/issues)
